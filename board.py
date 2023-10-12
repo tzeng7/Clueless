@@ -1,4 +1,4 @@
-from board_enums import RoomType, Direction
+from board_enums import Location, Direction
 
 
 # abstract class with capacity
@@ -18,7 +18,7 @@ class Space:
 
 
 class Room(Space):
-    def __init__(self, room_type: RoomType):
+    def __init__(self, room_type: Location):
         super().__init__(6)
         self.room_type = room_type
 
@@ -34,22 +34,18 @@ class Void(Space):
 
 
 class Board:
-
     def __init__(self):
         self.grid = [
-            [Room(RoomType.STUDY), Hallway(), Room(RoomType.HALL), Hallway(), Room(RoomType.LOUNGE)],
+            [Room(Location.STUDY), Hallway(), Room(Location.HALL), Hallway(), Room(Location.LOUNGE)],
             [Hallway(), Void(), Hallway(), Void(), Hallway()],
-            [Room(RoomType.LIBRARY), Hallway(), Room(RoomType.BILLIARD), Hallway(), Room(RoomType.DINING)],
+            [Room(Location.LIBRARY), Hallway(), Room(Location.BILLIARD), Hallway(), Room(Location.DINING)],
             [Hallway(), Void(), Hallway(), Void(), Hallway()],
-            [Room(RoomType.CONSERVATORY), Hallway(), Room(RoomType.BALLROOM), Hallway(), Room(RoomType.KITCHEN)]
+            [Room(Location.CONSERVATORY), Hallway(), Room(Location.BALLROOM), Hallway(), Room(Location.KITCHEN)]
         ]
 
-    def move_in_direction(self, player, direction):
-        try:
-            new_position = self.__calculate_new_position(player.position, direction)
-            self.move(player, new_position)
-        except:
-            print("Error: Cannot move in direction")
+    def initialize_player(self, player, position):
+        player.position = position
+        self.grid[position[0]][position[1]].add(player)
 
     def move(self, player, position):
         if not self.grid[position[0]][position[1]].can_add():
@@ -59,6 +55,15 @@ class Board:
         self.grid[from_position[0]][from_position[1]].remove(player)
         self.grid[position[0]][position[1]].add(player)
         player.set_position(position)
+
+    def move_in_direction(self, player, direction):
+        try:
+            new_position = self.__calculate_new_position(player.position, direction)
+            self.move(player, new_position)
+
+        except:
+            print("Error: Cannot move in direction")
+
 
     def get_movement_options(self, player):
         valid_directions = []
@@ -75,12 +80,13 @@ class Board:
         match direction:
             case Direction.UP if from_position[0] > 0:
                 new_position = (from_position[0] - 1, from_position[1])
+
             case Direction.DOWN if from_position[0] < 4:
                 new_position = (from_position[0] + 1, from_position[1])
             case Direction.LEFT if from_position[1] > 0:
-                new_position = (from_position[0], from_position - 1)
+                new_position = (from_position[0], from_position[1] - 1)
             case Direction.RIGHT if from_position[1] < 4:
-                new_position = (from_position[0], from_position + 1)
+                new_position = (from_position[0], from_position[1] + 1)
             case Direction.SECRET_PASSAGEWAY if from_position == (0, 0) or from_position == (4, 4):
                 new_position = (4 - from_position[0], 4 - from_position[1])
             case Direction.SECRET_PASSAGEWAY if from_position == (0, 4) or from_position == (4, 0):

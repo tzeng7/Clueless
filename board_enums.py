@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class RoomType(Enum):
+class Location(Enum):
     STUDY = "Study"
     HALL = "Hall"
     LOUNGE = "Lounge"
@@ -23,12 +23,12 @@ class Weapon(Enum):
 
 
 class Character(Enum):
-    SCARLET = 1
-    PLUM = 2
-    MUSTARD = 3
-    WHITE = 4
-    GREEN = 5
-    PEACOCK = 6
+    SCARLET = "Scarlet"
+    PLUM = "Plum"
+    MUSTARD = "Mustard"
+    WHITE = "White"
+    GREEN = "Green"
+    PEACOCK = "Peacock"
 
     def get_starting_position(self):
         dict = {
@@ -48,3 +48,9 @@ class Direction(Enum):
     LEFT = 3
     RIGHT = 4
     SECRET_PASSAGEWAY = 5
+
+class CardType(Enum):
+    CHARACTER = 1
+    WEAPON = 2
+    LOCATION = 3
+
