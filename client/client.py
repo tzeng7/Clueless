@@ -3,6 +3,7 @@ from sys import stdin
 from PodSixNet.Connection import ConnectionListener, connection
 import pygame
 import time
+from threading import Thread
 
 class PlayerClient(ConnectionListener):
     def __init__(self, host, port):
@@ -12,16 +13,24 @@ class PlayerClient(ConnectionListener):
         # get a nickname from the user before starting
         print("Enter your nickname: ")
         connection.Send({"action": "nickname", "nickname": stdin.readline().rstrip("\n")})
-        for _ in range(1, 10):
-            self.Loop()
-        print("Hit enter when ready!")
-        stdin.readline()
-        connection.Send({"action": "ready"})
+        self.ready_thread = Thread(target=self.listen_for_ready)
+        self.ready_thread.start()
 
-
-    def Loop(self):
+    def update(self):
         connection.Pump()
         self.Pump()
+
+        time.sleep(0.001)
+
+
+    #######################################
+    ### Keyboard I/O callbacks          ###
+    #######################################
+    def listen_for_ready(self):
+        time.sleep(3)
+        print(input("Hit any key when ready!\n"))
+        print("READY!")
+        connection.Send({"action": "ready"})
 
     #######################################
     ### Network event/message callbacks ###
@@ -53,5 +62,4 @@ class PlayerClient(ConnectionListener):
 if __name__ == '__main__':
     c = PlayerClient("127.0.0.1", int(10000))
     while 1:
-        c.Loop()
-        time.sleep(0.001)
+        c.update()
