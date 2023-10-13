@@ -14,6 +14,9 @@ class ClientChannel(Channel):
     def Network(self, data):
         print(data)
 
+    def Close(self):
+        self._server.DelPlayer(self)
+
     # From PodSixNet:
     # Whenever the client does connection.Send(mydata), the Network() method will be called.
     # The method Network_myaction() will only be called if your data has a key called ‘action’
