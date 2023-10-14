@@ -3,8 +3,7 @@ from model.board_enums import Character, Location, Weapon, CardType
 import random
 
 from model.card import Card
-from server.server import ClientChannel
-from server.server_player import ServerPlayer
+from server_player import ServerPlayer
 
 
 # future features:
@@ -14,16 +13,15 @@ from server.server_player import ServerPlayer
 #       - selecting your character
 class GameManager:
 
-    def __init__(self, server, players: [ServerPlayer]):
-        self.server = server
+    def __init__(self, players: [ServerPlayer]):
         # TODO: Sort this into play order
-        self.players = sorted(players, key=lambda x: x.wrapped.character.value)
+        self.players = sorted(players, key=lambda x: x.player_id.character.value)
         self.board = Board()
         self.turn = 0
         self.winning_combination = None
 
 
-    def start(self):
+    def start_game(self):
         # Distribute Cards
         cards = self.__create_cards()
         for i in range(0, len(cards)):

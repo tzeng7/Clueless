@@ -26,3 +26,6 @@ class Card:
         if self.card_type == CardType.LOCATION:
             return self.card_value == suggestion[2].value
 
+    def __repr__(self):
+        return f"Card({self.card_type}, value={self.card_value})"
+

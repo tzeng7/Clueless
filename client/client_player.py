@@ -3,8 +3,8 @@ from model.suggestion import Suggestion
 
 
 class ClientPlayer(PlayerIDWrapper):
-    def __init__(self, wrapped: PlayerID):
-        PlayerIDWrapper.__init__(self, wrapped)
+    def __init__(self, player_id: PlayerID):
+        PlayerIDWrapper.__init__(self, player_id)
         # client side
         self.cards = []
         self.can_suggest = False

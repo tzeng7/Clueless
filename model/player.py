@@ -12,16 +12,16 @@ class PlayerID:
 
 
 class PlayerIDWrapper:
-    def __init__(self, wrapped: PlayerID):
-        self.wrapped = wrapped
+    def __init__(self, player_id: PlayerID):
+        self.player_id = player_id
 
     @property
     def nickname(self):
-        return self.wrapped.nickname
+        return self.player_id.nickname
 
     @property
     def character(self):
-        return self.wrapped.character
+        return self.player_id.character
 
 
 class PlayerToken:

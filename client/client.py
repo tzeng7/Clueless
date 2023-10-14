@@ -4,7 +4,7 @@ import time
 from threading import Thread
 
 from client_player import ClientPlayer
-from messages.messages import JoinGame, Ready, UpdatePlayers, AssignPlayerID
+from messages.messages import JoinGame, Ready, UpdatePlayers, AssignPlayerID, DealCards
 
 
 class GameClient(ConnectionListener):
@@ -43,7 +43,9 @@ class GameClient(ConnectionListener):
     #######################################
 
     def Network_assign_player_id(self, data):
-        print(f"*** you are: {AssignPlayerID.deserialize(data).player_id}")
+        player_id = AssignPlayerID.deserialize(data).player_id
+        print(f"*** you are: {player_id}")
+        self.player = ClientPlayer(player_id=player_id)
 
 
     def Network_update_players(self, data):
@@ -53,10 +55,15 @@ class GameClient(ConnectionListener):
     def Network_start_game(self, data):
         print("*** Game Started!")
 
+    def Network_deal_cards(self, data):
+        deal_cards: DealCards = DealCards.deserialize(data)
+        self.player.cards.append(deal_cards.cards)
+        print(f"*** Received cards: {self.player.cards}")
+
     # built in stuff
 
     def Network_connected(self, data):
-        print("You are now connected to the server")
+        print("*** You are now connected to the server")
 
     def Network_error(self, data):
         print('error:', data['error'][1])

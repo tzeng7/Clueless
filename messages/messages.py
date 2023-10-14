@@ -2,6 +2,7 @@ import pickle
 import uuid
 from typing import Self
 
+from model.card import Card
 from model.player import PlayerID
 
 
@@ -52,3 +53,12 @@ class UpdatePlayers(BaseMessage):
     def __init__(self, players: [PlayerID]):
         super().__init__()
         self.players: [PlayerID] = players
+
+
+class DealCards(BaseMessage):
+    name = "deal_cards"
+
+    def __init__(self, cards: [Card]):
+        super().__init__()
+        self.cards = cards
+

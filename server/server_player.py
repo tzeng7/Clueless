@@ -2,10 +2,11 @@ from model.player import PlayerID, PlayerIDWrapper
 
 
 class ServerPlayer(PlayerIDWrapper):
-    def __init__(self, wrapped: PlayerID):
-        PlayerIDWrapper.__init__(self, wrapped)
+    def __init__(self, player_id: PlayerID):
+        PlayerIDWrapper.__init__(self, player_id)
         self._active = False  # deactivate for false accusation
         self._ready = False
+        self._cards = []
 
 
     @property
@@ -24,15 +25,10 @@ class ServerPlayer(PlayerIDWrapper):
     def active(self, active):
         self._active = active
 
-    # def enter_board(self):
-    #     self.position = self.character.get_starting_position()
+    @property
+    def cards(self):
+        return self._cards
 
-    # TODO: convert to python property
-    # def set_position(self, position):
-    #     self.position = position
-    #
-    # def set_cards(self, card):
-    #     self.cards.append(card)
-    #
-    # def get_character(self):
-    #     return self.character
+    @cards.setter
+    def cards(self, cards):
+        self._cards = cards
