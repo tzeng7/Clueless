@@ -2,12 +2,13 @@ import pickle
 import uuid
 from typing import Self
 
+from model.board_enums import Direction, ActionType
 from model.card import Card
 from model.player import PlayerID
 
 
 class BaseMessage:
-    name = "BaseMessage"
+    name = "base_message"
 
     def __init__(self):
         self.uuid = str(uuid.uuid4())
@@ -34,10 +35,34 @@ class Ready(BaseMessage):
     name = "ready"
 
 
-# CLIENT BOUND
-class StartGame(BaseMessage):
-    name = "start_game"
+class ClientAction:
+    class BaseAction(BaseMessage):
+        name = "ClientAction"
 
+        def __init__(self, player_id: PlayerID):
+            super().__init__()
+            self.player_id = player_id
+            if hasattr(self, "action_type") and self.action_type:
+                self.name = f"ClientAction_{self.action_type.value}"
+
+        @staticmethod
+        def name_for_action(action_type: ActionType):
+            return f"ClientAction_{action_type.value}"
+
+    class Move(BaseAction):
+        action_type = ActionType.MOVE
+        def __init__(self, player_id: PlayerID, position: (int, int)):
+            super().__init__(player_id)
+            self.position = position
+
+    class EndTurn(BaseAction):
+        action_type = ActionType.END_TURN
+
+        def __init__(self, player_id: PlayerID):
+            super().__init__(player_id)
+
+
+# CLIENT BOUND
 
 class AssignPlayerID(BaseMessage):
     name = "assign_player_id"
@@ -55,6 +80,10 @@ class UpdatePlayers(BaseMessage):
         self.players: [PlayerID] = players
 
 
+class StartGame(BaseMessage):
+    name = "start_game"
+
+
 class DealCards(BaseMessage):
     name = "deal_cards"
 
@@ -62,3 +91,10 @@ class DealCards(BaseMessage):
         super().__init__()
         self.cards = cards
 
+
+class StartTurn(BaseMessage):
+    name = "start_turn"
+
+    def __init__(self, turn_id: int):
+        super().__init__()
+        self.turn_id: int = turn_id

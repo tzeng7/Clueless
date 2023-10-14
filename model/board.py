@@ -48,10 +48,6 @@ class Board:
     def add_player(self, id: PlayerID):
         self.player_tokens[id] = PlayerToken()
 
-    def initialize(self, player):
-        player.position = player.character.get_starting_position()
-        self.grid[player.position[0]][player.position[1]].add(player)
-
     def move(self, player, position):
         if not self.grid[position[0]][position[1]].can_add():
             print("Error: Cannot add player to space")

@@ -54,3 +54,9 @@ class CardType(Enum):
     WEAPON = 2
     LOCATION = 3
 
+
+class ActionType(Enum):
+    MOVE = "move"
+    SUGGEST = "suggest"
+    ACCUSE = "accuse"
+    END_TURN = "end_turn"

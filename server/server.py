@@ -2,7 +2,7 @@ from PodSixNet.Channel import Channel
 from PodSixNet.Server import Server
 import time
 
-from messages.messages import JoinGame, StartGame, UpdatePlayers, AssignPlayerID, DealCards
+from messages.messages import JoinGame, StartGame, UpdatePlayers, AssignPlayerID, ClientAction, BaseMessage
 from model.board_enums import Character
 from model.player import PlayerID
 from game_manager import GameManager
@@ -36,6 +36,16 @@ class ClientChannel(Channel):
         print(f"Received ready from client channel {self}")
         self._server.set_ready_for_player(self)
 
+    def Network_ClientAction_move(self, data):
+        move_action = ClientAction.Move.deserialize(data)
+        print(f"Received ClientAction_move from client channel {self}")
+        self._server.move(self, move_action)
+
+    def Network_ClientAction_end_turn(self, data):
+        end_turn_action = ClientAction.EndTurn.deserialize(data)
+        print(f"Received ClientAction_end_turn from client channel {self}")
+        self._server.end_turn(end_turn_action)
+
 
 class ClueServer(Server):
     channelClass = ClientChannel
@@ -53,14 +63,14 @@ class ClueServer(Server):
         print("New Client Connected " + str(channel.addr))
 
     ################################
-    #      PLAYER MANAGEMENT       #
+    #       LOBBY MANAGEMENT       #
     ################################
 
     def add_player(self, channel, nickname):
         print("New Player" + str(channel.addr))
         minted_id = PlayerID(character=list(Character)[len(self.player_queue)], nickname=nickname)
-        self.player_queue[channel] = ServerPlayer(minted_id)
-        channel.Send(AssignPlayerID(player_id=minted_id).serialize())
+        self.player_queue[channel] = ServerPlayer(minted_id, channel=channel)
+        self.SendToChannel(channel, AssignPlayerID(player_id=minted_id))
         self.send_players()
         print("players in queue", [p for p in self.player_queue])
 
@@ -70,13 +80,13 @@ class ClueServer(Server):
         self.send_players()
 
     def send_players(self):
-        self.SendToAll(UpdatePlayers(players=[player.player_id for player in self.player_queue.values()]).serialize())
+        self.SendToAll(UpdatePlayers(players=[player.player_id for player in self.player_queue.values()]))
 
     def set_ready_for_player(self, channel):
         (self.player_queue[channel]).ready = True
         print("READY")
         if all(player.ready for player in self.player_queue.values()):
-            self.SendToAll(StartGame().serialize())
+            self.SendToAll(StartGame())
             self.start_game()
 
     ################################
@@ -87,26 +97,29 @@ class ClueServer(Server):
         # TODO Turn management
         self.game_manager = GameManager(players=self.player_queue.values())
         self.game_manager.start_game()
-        for player in self.game_manager.players:
-            self.SendToPlayer(player.player_id, DealCards(cards=player.cards).serialize())
-        # self.next_turn()
 
-    def next_turn(self):
-        pass
+    def move(self, channel, move_action: ClientAction.Move):
+        player_to_move = self.player_queue[channel]
+        self.game_manager.move(player_to_move, move_action)
+
+    def end_turn(self, end_turn_action: ClientAction.EndTurn):
+        self.game_manager.end_turn(end_turn_action)
 
     ################################
     #       NETWORKING HELPERS     #
     ################################
 
-    def SendToPlayer(self, player_id, data):
+    def SendToPlayer(self, player_id, data: BaseMessage):
         for channel, p in self.player_queue.items():
             if player_id == p.player_id:
-                channel.Send(data)
-    def SendToChannel(self, channel: Channel, data):
-        channel.Send(data)
+                channel.Send(data.serialize())
 
-    def SendToAll(self, data):
-        [p.Send(data) for p in self.player_queue]
+    def SendToChannel(self, channel: Channel, data: BaseMessage):
+        channel.Send(data.serialize())
+
+    def SendToAll(self, data: BaseMessage):
+        serialized = data.serialize()
+        [p.Send(serialized) for p in self.player_queue]
 
     def Launch(self):
         while True:

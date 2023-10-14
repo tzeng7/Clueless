@@ -3,19 +3,22 @@ from PodSixNet.Connection import ConnectionListener, connection
 import time
 from threading import Thread
 
+from client_game_manager import ClientGameManager
 from client_player import ClientPlayer
-from messages.messages import JoinGame, Ready, UpdatePlayers, AssignPlayerID, DealCards
+from messages.messages import JoinGame, Ready, UpdatePlayers, AssignPlayerID, DealCards, StartTurn, ClientAction, \
+    BaseMessage
 
 
 class GameClient(ConnectionListener):
     def __init__(self, host, port):
         self.player: ClientPlayer = None
+        self.game_manager: ClientGameManager = None
         self.Connect((host, port))
         print("Player client started")
         print("Ctrl-C to exit")
         # get a nickname from the user before starting
         nickname = input("Enter your nickname: ")
-        connection.Send(JoinGame(nickname=nickname).serialize())
+        self.Send(JoinGame(nickname=nickname))
 
         # listen for ready on a separate thread, in order to not block the thread,
         # which will prevent the client from receiving updates about other players joining.
@@ -28,15 +31,17 @@ class GameClient(ConnectionListener):
 
         time.sleep(0.001)
 
+    def Send(self, data: BaseMessage):
+        connection.Send(data.serialize())
 
     #######################################
     ### Keyboard I/O callbacks          ###
     #######################################
     def listen_for_ready(self):
-        time.sleep(3)
+        time.sleep(2)
         print(input("Hit any key when ready!\n"))
         print("READY!")
-        connection.Send(Ready().serialize())
+        self.Send(Ready())
 
     #######################################
     ### Network event/message callbacks ###
@@ -46,6 +51,7 @@ class GameClient(ConnectionListener):
         player_id = AssignPlayerID.deserialize(data).player_id
         print(f"*** you are: {player_id}")
         self.player = ClientPlayer(player_id=player_id)
+        self.game_manager = ClientGameManager(player=self.player)
 
 
     def Network_update_players(self, data):
@@ -54,6 +60,19 @@ class GameClient(ConnectionListener):
 
     def Network_start_game(self, data):
         print("*** Game Started!")
+
+    def Network_start_turn(self, data):
+        print("*** Turn start!")
+        turn_id = StartTurn.deserialize(data).turn_id
+        self.game_manager.start_turn(turn_id=turn_id)
+        self.Send(self.game_manager.next_action())
+
+    def Network_ClientAction_move(self, data):
+        print("*** Received move!")
+        move: ClientAction.Move = ClientAction.Move.deserialize(data)
+        # TODO: update board state
+        if move.player_id == self.player.player_id:
+            self.Send(self.game_manager.next_action())
 
     def Network_deal_cards(self, data):
         deal_cards: DealCards = DealCards.deserialize(data)
