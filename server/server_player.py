@@ -1,23 +1,12 @@
-from enum import Enum
+from model.player import PlayerID, PlayerIDWrapper
 
 
-class Character(Enum):
-    SCARLET = "Scarlet"
-    PLUM = "Plum"
-    MUSTARD = "Mustard"
-    WHITE = "White"
-    GREEN = "Green"
-    PEACOCK = "Peacock"
-
-class Player:
-    def __init__(self, character):
-        self.character = character
-        self.nickname = f"Anonymous ({character.value})"
+class ServerPlayer(PlayerIDWrapper):
+    def __init__(self, wrapped: PlayerID):
+        PlayerIDWrapper.__init__(self, wrapped)
+        self._active = False  # deactivate for false accusation
         self._ready = False
-        # self.position = None # not initialized
-        # self.character = character
-        # self.active = False # deactivate for false accusation
-        # self.cards = []
+
 
     @property
     def ready(self):
@@ -26,6 +15,14 @@ class Player:
     @ready.setter
     def ready(self, ready):
         self._ready = ready
+
+    @property
+    def active(self):
+        return self._active
+
+    @active.setter
+    def active(self, active):
+        self._active = active
 
     # def enter_board(self):
     #     self.position = self.character.get_starting_position()

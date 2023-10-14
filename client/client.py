@@ -1,18 +1,24 @@
-from sys import stdin
 
 from PodSixNet.Connection import ConnectionListener, connection
-import pygame
 import time
 from threading import Thread
 
-class PlayerClient(ConnectionListener):
+from client_player import ClientPlayer
+from messages.messages import JoinGame, Ready, UpdatePlayers, AssignPlayerID
+
+
+class GameClient(ConnectionListener):
     def __init__(self, host, port):
+        self.player: ClientPlayer = None
         self.Connect((host, port))
         print("Player client started")
         print("Ctrl-C to exit")
         # get a nickname from the user before starting
-        print("Enter your nickname: ")
-        connection.Send({"action": "nickname", "nickname": stdin.readline().rstrip("\n")})
+        nickname = input("Enter your nickname: ")
+        connection.Send(JoinGame(nickname=nickname).serialize())
+
+        # listen for ready on a separate thread, in order to not block the thread,
+        # which will prevent the client from receiving updates about other players joining.
         self.ready_thread = Thread(target=self.listen_for_ready)
         self.ready_thread.start()
 
@@ -30,20 +36,22 @@ class PlayerClient(ConnectionListener):
         time.sleep(3)
         print(input("Hit any key when ready!\n"))
         print("READY!")
-        connection.Send({"action": "ready"})
+        connection.Send(Ready().serialize())
 
     #######################################
     ### Network event/message callbacks ###
     #######################################
 
-    def Network_players(self, data):
-        print("*** players: " + ", ".join([p for p in data['players']]))
+    def Network_assign_player_id(self, data):
+        print(f"*** you are: {AssignPlayerID.deserialize(data).player_id}")
 
-    def Network_game_start(self, data):
+
+    def Network_update_players(self, data):
+        update_players: UpdatePlayers = UpdatePlayers.deserialize(data)
+        print(f"*** players: {[p for p in update_players.players]}")
+
+    def Network_start_game(self, data):
         print("*** Game Started!")
-
-    def Network_message(self, data):
-        print(data['who'] + ": " + data['message'])
 
     # built in stuff
 
@@ -60,6 +68,6 @@ class PlayerClient(ConnectionListener):
 
 
 if __name__ == '__main__':
-    c = PlayerClient("127.0.0.1", int(10000))
+    c = GameClient("127.0.0.1", int(10000))
     while 1:
         c.update()

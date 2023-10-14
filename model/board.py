@@ -1,11 +1,12 @@
-from board_enums import Location, Direction
+from model.board_enums import Location, Direction
+from model.player import PlayerToken, PlayerID
 
 
 # abstract class with capacity
 class Space:
     def __init__(self, capacity):
         self.capacity = capacity
-        self.players = []
+        self.players: [PlayerToken] = []
 
     def can_add(self):
         return len(self.players) < self.capacity
@@ -35,6 +36,7 @@ class Void(Space):
 
 class Board:
     def __init__(self):
+        self.player_tokens: dict[PlayerID, PlayerToken] = {}
         self.grid = [
             [Room(Location.STUDY), Hallway(), Room(Location.HALL), Hallway(), Room(Location.LOUNGE)],
             [Hallway(), Void(), Hallway(), Void(), Hallway()],
@@ -43,9 +45,12 @@ class Board:
             [Room(Location.CONSERVATORY), Hallway(), Room(Location.BALLROOM), Hallway(), Room(Location.KITCHEN)]
         ]
 
-    def initialize_player(self, player, position):
-        player.position = position
-        self.grid[position[0]][position[1]].add(player)
+    def add_player(self, id: PlayerID):
+        self.player_tokens[id] = PlayerToken()
+
+    def initialize(self, player):
+        player.position = player.character.get_starting_position()
+        self.grid[player.position[0]][player.position[1]].add(player)
 
     def move(self, player, position):
         if not self.grid[position[0]][position[1]].can_add():
@@ -60,10 +65,8 @@ class Board:
         try:
             new_position = self.__calculate_new_position(player.position, direction)
             self.move(player, new_position)
-
         except:
             print("Error: Cannot move in direction")
-
 
     def get_movement_options(self, player):
         valid_directions = []
