@@ -43,7 +43,7 @@ class ClueServer(Server):
     def __init__(self):
         Server.__init__(self, localaddr=("127.0.0.1", 10000), listeners=6)
         self.player_queue: dict[ClientChannel, ServerPlayer] = {}
-        self.game_manager = None
+        self.game_manager: GameManager = None
         print('Server launched')
         print(f'Socket: {self.socket}')
 
@@ -89,9 +89,10 @@ class ClueServer(Server):
         self.game_manager.start_game()
         for player in self.game_manager.players:
             self.SendToPlayer(player.player_id, DealCards(cards=player.cards).serialize())
+        # self.next_turn()
 
     def next_turn(self):
-        self.game_manager.next_player()
+        pass
 
     ################################
     #       NETWORKING HELPERS     #

@@ -20,7 +20,6 @@ class GameManager:
         self.turn = 0
         self.winning_combination = None
 
-
     def start_game(self):
         # Distribute Cards
         cards = self.__create_cards()
@@ -32,11 +31,10 @@ class GameManager:
     def __create_cards(self):
         cards = []
 
-        #how to choose specific combination and distribute the rest
+        # choose specific combination and distribute the rest
         self.winning_combination = (Card(CardType.CHARACTER, random.choice(list(Character))),
                                     Card(CardType.LOCATION, random.choice(list(Location))),
                                     Card(CardType.WEAPON, random.choice(list(Weapon))))
-
 
         cards.extend([Card(CardType.CHARACTER, x.value) for x in Character if not x.value == self.winning_combination[0]])
         cards.extend([Card(CardType.LOCATION, x.value) for x in Location if not x.value == self.winning_combination[1]])
