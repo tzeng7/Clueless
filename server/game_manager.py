@@ -17,7 +17,7 @@ class GameManager:
 
     def __init__(self, players: [ServerPlayer]):
         # Play order = by Character Enum order, which is also the order the players joined the lobby
-        self.players: list[ServerPlayer] = sorted(players, key=lambda x: x.player_id.character.value)
+        self.players: list[ServerPlayer] = sorted(players, key=lambda x: x.player_id.character.value, reverse=True)
         self.board = Board()
         self.turn = -1
         self.winning_combination = None

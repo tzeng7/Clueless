@@ -61,7 +61,7 @@ class ClientGameManager:
             # consider all actions that come after the action we just took.
             # e.g. if SUGGEST was the last move, only ACCUSE and END_TURN should be available
             last_action = self.current_turn.actions_taken[-1].action_type
-            available = available[available.index(last_action):]
+            available = available[(available.index(last_action)+1):]
 
         # TODO: remove the SUGGEST option if we suggested in this room last turn,
         # and we did not move into a room by another player's suggestion

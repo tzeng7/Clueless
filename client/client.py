@@ -64,7 +64,7 @@ class GameClient(ConnectionListener):
     def Network_start_turn(self, data):
         print("*** Turn start!")
         turn_id = StartTurn.deserialize(data).turn_id
-        self.game_manager.start_turn(turn_id=turn_id)
+        self.game_manager.start_turn(turn_id=turn_id) # managing turn history
         self.Send(self.game_manager.next_action())
 
     def Network_ClientAction_move(self, data):
