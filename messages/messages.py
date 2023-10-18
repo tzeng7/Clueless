@@ -97,7 +97,7 @@ class DealCards(BaseMessage):
         self.cards = cards
 
 
-class StartTurn(BaseMessage):
+class YourTurn(BaseMessage):
     name = "start_turn"
 
     def __init__(self, turn_id: int):

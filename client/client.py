@@ -4,7 +4,7 @@ from threading import Thread
 
 from client_game_manager import ClientGameManager
 from client_player import ClientPlayer
-from messages.messages import JoinGame, Ready, UpdatePlayers, AssignPlayerID, DealCards, StartTurn, ClientAction, \
+from messages.messages import JoinGame, Ready, UpdatePlayers, AssignPlayerID, DealCards, YourTurn, ClientAction, \
     BaseMessage, StartGame
 
 
@@ -62,7 +62,7 @@ class GameClient(ConnectionListener):
 
     def Network_start_turn(self, data):
         print("*** Turn start!")
-        turn_id = StartTurn.deserialize(data).turn_id
+        turn_id = YourTurn.deserialize(data).turn_id
         self.game_manager.start_turn(turn_id=turn_id)  # managing turn history
         self.Send(self.game_manager.next_action())
 

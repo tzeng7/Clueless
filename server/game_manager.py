@@ -1,4 +1,4 @@
-from messages.messages import DealCards, StartTurn, ClientAction, BaseMessage
+from messages.messages import DealCards, YourTurn, ClientAction, BaseMessage
 from model.board import Board
 from model.board_enums import Character, Location, Weapon, CardType
 import random
@@ -17,6 +17,7 @@ class GameManager:
 
     def __init__(self, players: [ServerPlayer]):
         # Play order = by Character Enum order, which is also the order the players joined the lobby
+        self.current_player = None
         self.players: list[ServerPlayer] = sorted(players, key=lambda x: x.player_id.character.value, reverse=True)
         self.board: Board = Board(players=[player.player_id for player in self.players])
         self.turn = -1
@@ -33,8 +34,8 @@ class GameManager:
 
     def next_turn(self):
         self.turn += 1
-        next_player = self.players[self.turn % len(self.players)]
-        next_player.Send(StartTurn(turn_id=self.turn))
+        self.current_player = self.players[self.turn % len(self.players)]
+        self.current_player.Send(YourTurn(turn_id=self.turn))
 
     def end_turn(self, end_action: ClientAction.EndTurn):
         self.SendToAll(end_action)

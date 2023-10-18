@@ -34,7 +34,7 @@ class ClientGameManager:
         match actions[choice - 1]:
             case ActionType.MOVE:
                 #TODO: LOG BOARD // TEST EACH DIRECTION AND TRAVERSE WHOLE BOARD // TEST BEING BLOCKED IN HALLWAY
-                #print out which room has what per row of grid
+                #print out which room has what per row of grid // string wrapper for board
                 if not self.player.initialized:
                     selected_action = ClientAction.Move(
                         player_id=self.player.player_id,
