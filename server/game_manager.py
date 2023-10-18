@@ -18,7 +18,7 @@ class GameManager:
     def __init__(self, players: [ServerPlayer]):
         # Play order = by Character Enum order, which is also the order the players joined the lobby
         self.players: list[ServerPlayer] = sorted(players, key=lambda x: x.player_id.character.value, reverse=True)
-        self.board = Board()
+        self.board: Board = Board(players=[player.player_id for player in self.players])
         self.turn = -1
         self.winning_combination = None
 
@@ -42,6 +42,7 @@ class GameManager:
 
     def move(self, player, move_action: ClientAction.Move):
         # TODO: Needs implementation!
+
         # self.board.move(player, move_action.position)
         # TODO: Add error handling
         self.SendToAll(move_action)

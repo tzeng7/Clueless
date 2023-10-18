@@ -1,5 +1,6 @@
 from client_player import ClientPlayer
 from messages.messages import ClientAction
+from model.board import Board
 from model.board_enums import ActionType, Direction
 
 
@@ -10,12 +11,11 @@ class Turn:
         self.actions_taken: list[ClientAction] = []
 
 class ClientGameManager:
-    def __init__(self, player):
+    def __init__(self, player, board):
         self.player: ClientPlayer = player
         self.previous_turn = None
         self.current_turn = None
-
-
+        self.board: Board = board
 
     def start_turn(self, turn_id: int):
         self.previous_turn = self.current_turn
@@ -33,11 +33,23 @@ class ClientGameManager:
 
         match actions[choice - 1]:
             case ActionType.MOVE:
-                # TODO: implement move logic
-                selected_action = ClientAction.Move(
-                    player_id=self.player.player_id,
-                    position=self.player.character.get_starting_position()
-                )
+                #TODO: LOG BOARD // TEST EACH DIRECTION AND TRAVERSE WHOLE BOARD // TEST BEING BLOCKED IN HALLWAY
+                #print out which room has what per row of grid
+                if not self.player.initialized:
+                    selected_action = ClientAction.Move(
+                        player_id=self.player.player_id,
+                        position=self.player.character.get_starting_position()
+                    )
+                    self.player.initialized = True
+                else:
+                    possible_directions = self.board.get_movement_options(self.player.player_id)
+                    for idx, possible_choice in enumerate(possible_directions):
+                        print(f"{idx + 1}. {possible_choice[0].name}")
+                    choice = int(input("Choose direction: "))
+                    selected_action = ClientAction.Move(
+                        player_id=self.player.player_id,
+                        position=possible_directions[choice - 1][1]
+                    )
             case ActionType.END_TURN:
                 selected_action = ClientAction.EndTurn(player_id=self.player.player_id)
             case _:

@@ -7,6 +7,14 @@ class PlayerID:
         self.character = character
         self.nickname = nickname
 
+    def __eq__(self, other):
+        # Equality Comparison between two objects
+        return self.character == other.character and self.nickname == other.nickname
+
+    def __hash__(self):
+        # hash(custom_object)
+        return hash((self.character, self.nickname))
+
     def __repr__(self):
         return f"PlayerID(character={self.character.value}, nickname={self.nickname})"
 
@@ -27,9 +35,10 @@ class PlayerIDWrapper:
         return self.player_id.character
 
 
-class PlayerToken:
-    def __init__(self):
-        self._position = None
+class PlayerToken(PlayerIDWrapper): # TODO: Confirm that this needs to be a subclass
+    def __init__(self, player_id: PlayerID):
+        super().__init__(player_id=player_id)
+        self.position = None
 
     @property
     def position(self):

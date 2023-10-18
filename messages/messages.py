@@ -2,6 +2,7 @@ import pickle
 import uuid
 from typing import Self
 
+from model.board import Board
 from model.board_enums import Direction, ActionType
 from model.card import Card
 from model.player import PlayerID
@@ -16,8 +17,8 @@ class BaseMessage:
     def serialize(self):
         return {"action": self.name, "uuid": self.uuid, "payload": pickle.dumps(self).hex()}
 
-    @staticmethod
-    def deserialize(data) -> Self:
+    @classmethod
+    def deserialize(cls, data) -> Self:
         return pickle.loads(bytes.fromhex(data["payload"]))
 
 
@@ -82,6 +83,10 @@ class UpdatePlayers(BaseMessage):
 
 class StartGame(BaseMessage):
     name = "start_game"
+
+    def __init__(self, board: Board):
+        super().__init__()
+        self.board = board
 
 
 class DealCards(BaseMessage):

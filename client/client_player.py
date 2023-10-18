@@ -9,6 +9,7 @@ class ClientPlayer(PlayerIDWrapper):
         self.cards = []
         # self.can_suggest = False
         self.active = True
+        self.initialized = False
 
     def suggestion_responses(self, suggestion: Suggestion):
         return [card for card in self.cards if card.matches(suggestion)]

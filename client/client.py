@@ -1,4 +1,3 @@
-
 from PodSixNet.Connection import ConnectionListener, connection
 import time
 from threading import Thread
@@ -6,7 +5,7 @@ from threading import Thread
 from client_game_manager import ClientGameManager
 from client_player import ClientPlayer
 from messages.messages import JoinGame, Ready, UpdatePlayers, AssignPlayerID, DealCards, StartTurn, ClientAction, \
-    BaseMessage
+    BaseMessage, StartGame
 
 
 class GameClient(ConnectionListener):
@@ -51,8 +50,6 @@ class GameClient(ConnectionListener):
         player_id = AssignPlayerID.deserialize(data).player_id
         print(f"*** you are: {player_id}")
         self.player = ClientPlayer(player_id=player_id)
-        self.game_manager = ClientGameManager(player=self.player)
-
 
     def Network_update_players(self, data):
         update_players: UpdatePlayers = UpdatePlayers.deserialize(data)
@@ -60,17 +57,22 @@ class GameClient(ConnectionListener):
 
     def Network_start_game(self, data):
         print("*** Game Started!")
+        board = StartGame.deserialize(data).board
+        self.game_manager = ClientGameManager(player=self.player, board=board)
 
     def Network_start_turn(self, data):
         print("*** Turn start!")
         turn_id = StartTurn.deserialize(data).turn_id
-        self.game_manager.start_turn(turn_id=turn_id) # managing turn history
+        self.game_manager.start_turn(turn_id=turn_id)  # managing turn history
         self.Send(self.game_manager.next_action())
 
     def Network_ClientAction_move(self, data):
         print("*** Received move!")
         move: ClientAction.Move = ClientAction.Move.deserialize(data)
         # TODO: update board state
+
+        self.game_manager.board.move(move.player_id, move.position)
+        # self.game_manager.board.move(move., move.position)
         if move.player_id == self.player.player_id:
             self.Send(self.game_manager.next_action())
 

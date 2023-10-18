@@ -6,7 +6,7 @@ from model.player import PlayerToken, PlayerID
 class Space:
     def __init__(self, capacity):
         self.capacity = capacity
-        self.players: [PlayerToken] = []
+        self.players: dict[PlayerID: PlayerToken] = []
 
     def can_add(self):
         return len(self.players) < self.capacity
@@ -35,8 +35,10 @@ class Void(Space):
 
 
 class Board:
-    def __init__(self):
-        self.player_tokens: dict[PlayerID, PlayerToken] = {}
+    def __init__(self, players: list[PlayerID]):
+        self.player_tokens: dict[PlayerID, PlayerToken] = dict(
+            [(player, PlayerToken(player_id=player)) for player in players]
+        )
         self.grid = [
             [Room(Location.STUDY), Hallway(), Room(Location.HALL), Hallway(), Room(Location.LOUNGE)],
             [Hallway(), Void(), Hallway(), Void(), Hallway()],
@@ -45,31 +47,35 @@ class Board:
             [Room(Location.CONSERVATORY), Hallway(), Room(Location.BALLROOM), Hallway(), Room(Location.KITCHEN)]
         ]
 
-    def add_player(self, id: PlayerID):
-        self.player_tokens[id] = PlayerToken()
-
-    def move(self, player, position):
+    def move(self, player_id, position):
+        player_token = self.player_tokens[player_id]
         if not self.grid[position[0]][position[1]].can_add():
-            print("Error: Cannot add player to space")
+            print("Error: Cannot add player to space") # TODO: Throw?
             return
-        from_position = player.position
-        self.grid[from_position[0]][from_position[1]].remove(player)
-        self.grid[position[0]][position[1]].add(player)
-        player.set_position(position)
+        if player_token.position is None:
+            self.grid[position[0]][position[1]].add(player_token)
+        else:
+            from_position = player_token.position
+            self.grid[from_position[0]][from_position[1]].remove(player_token)
+            self.grid[position[0]][position[1]].add(player_token)
+        player_token.position = position
 
-    def move_in_direction(self, player, direction):
+    def move_in_direction(self, player_id, direction):
+        player_token = self.player_tokens[player_id]
         try:
-            new_position = self.__calculate_new_position(player.position, direction)
-            self.move(player, new_position)
+            new_position = self.calculate_new_position(player_token.position, direction)
+            self.move(player_id, new_position)
         except:
             print("Error: Cannot move in direction")
 
-    def get_movement_options(self, player):
+    def get_movement_options(self, player_id) -> list[(Direction, (int, int))]:
+        player_token = self.player_tokens[player_id]
         valid_directions = []
         for direction in Direction:
             try:
-                self.__calculate_new_position(player.position, direction)
-                valid_directions.append(direction)
+                new_position = self.__calculate_new_position(player_token.position, direction)
+                if self.grid[new_position[0]][new_position[1]].can_add():
+                    valid_directions.append((direction, new_position))
             except ValueError:
                 print(f"{direction.value} is not valid")
         return valid_directions

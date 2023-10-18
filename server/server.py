@@ -86,7 +86,6 @@ class ClueServer(Server):
         (self.player_queue[channel]).ready = True
         print("READY")
         if all(player.ready for player in self.player_queue.values()):
-            self.SendToAll(StartGame())
             self.start_game()
 
     ################################
@@ -96,6 +95,7 @@ class ClueServer(Server):
     def start_game(self):
         # TODO Turn management
         self.game_manager = GameManager(players=self.player_queue.values())
+        self.SendToAll(StartGame(board=self.game_manager.board))
         self.game_manager.start_game()
 
     def move(self, channel, move_action: ClientAction.Move):
