@@ -44,7 +44,7 @@ class ClientChannel(Channel):
     def Network_ClientAction_suggest(self, data):
         suggest_action = ClientAction.Suggest.deserialize(data)
         print(f"Received ClientAction_suggest from client channel {self}")
-
+        self._server.suggest(self, suggest_action)
     def Network_ClientAction_end_turn(self, data):
         end_turn_action = ClientAction.EndTurn.deserialize(data)
         print(f"Received ClientAction_end_turn from client channel {self}")
