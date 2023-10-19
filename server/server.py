@@ -41,6 +41,10 @@ class ClientChannel(Channel):
         print(f"Received ClientAction_move from client channel {self}")
         self._server.move(self, move_action)
 
+    def Network_ClientAction_suggest(self, data):
+        suggest_action = ClientAction.Suggest.deserialize(data)
+        print(f"Received ClientAction_suggest from client channel {self}")
+
     def Network_ClientAction_end_turn(self, data):
         end_turn_action = ClientAction.EndTurn.deserialize(data)
         print(f"Received ClientAction_end_turn from client channel {self}")
@@ -101,6 +105,9 @@ class ClueServer(Server):
     def move(self, channel, move_action: ClientAction.Move):
         player_to_move = self.player_queue[channel]
         self.game_manager.move(player_to_move, move_action)
+
+    def suggest(self, channel, suggest_action: ClientAction.Suggest):
+        self.game_manager.suggest(suggest_action)
 
     def end_turn(self, end_turn_action: ClientAction.EndTurn):
         self.game_manager.end_turn(end_turn_action)

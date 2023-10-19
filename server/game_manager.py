@@ -48,11 +48,12 @@ class GameManager:
         # TODO: Add error handling
         self.SendToAll(move_action)
 
-    def suggest(self, accuser, accused, weapon):
-        #move accused to accuser's location
-        self.board.move(accused, accuser.position) #TODO: move weapon into location
+    def suggest(self, suggest_action: ClientAction.Suggest):
+        # move accused to accuser's location
+        print("up to here")
+        self.SendToAll(suggest_action)  # TODO: move weapon into location
 
-        #cue suggestion_responses
+        # cue suggestion_responses
 
     def accuse(self, accuser, character, weapon, location):
         # deactivate player if wrong; return boolean whether right or wrong
@@ -69,7 +70,8 @@ class GameManager:
                                     Card(CardType.LOCATION, random.choice(list(Location))),
                                     Card(CardType.WEAPON, random.choice(list(Weapon))))
 
-        cards.extend([Card(CardType.CHARACTER, x.value) for x in Character if not x.value == self.winning_combination[0]])
+        cards.extend(
+            [Card(CardType.CHARACTER, x.value) for x in Character if not x.value == self.winning_combination[0]])
         cards.extend([Card(CardType.LOCATION, x.value) for x in Location if not x.value == self.winning_combination[1]])
         cards.extend([Card(CardType.WEAPON, x.value) for x in Weapon if not x.value == self.winning_combination[2]])
         random.shuffle(cards)

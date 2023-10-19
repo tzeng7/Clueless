@@ -3,7 +3,7 @@ import uuid
 from typing import Self
 
 from model.board import Board
-from model.board_enums import Direction, ActionType
+from model.board_enums import Direction, ActionType, Character, Weapon, Location
 from model.card import Card
 from model.player import PlayerID
 
@@ -52,9 +52,17 @@ class ClientAction:
 
     class Move(BaseAction):
         action_type = ActionType.MOVE
+
         def __init__(self, player_id: PlayerID, position: (int, int)):
             super().__init__(player_id)
             self.position = position
+
+    class Suggest(BaseAction):
+        action_type = ActionType.SUGGEST
+
+        def __init__(self, player_id: PlayerID, suggestion: (Character, Weapon, Location)):
+            super().__init__(player_id)
+            self.suggestion = suggestion
 
     class EndTurn(BaseAction):
         action_type = ActionType.END_TURN

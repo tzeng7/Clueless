@@ -76,6 +76,12 @@ class GameClient(ConnectionListener):
         if move.player_id == self.player.player_id:
             self.Send(self.game_manager.next_action())
 
+    def Network_ClientAction_suggest(self, data):
+        print("*** Received suggestion")
+        suggest: ClientAction.Suggest = ClientAction.Suggest.deserialize(data)
+
+        self.Send(self.game_manager.next_action())
+
     def Network_deal_cards(self, data):
         deal_cards: DealCards = DealCards.deserialize(data)
         self.player.cards.append(deal_cards.cards)
