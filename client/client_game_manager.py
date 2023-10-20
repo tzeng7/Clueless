@@ -22,6 +22,17 @@ class ClientGameManager:
         self.previous_turn = self.current_turn
         self.current_turn = Turn(turn_id=turn_id)
 
+    def disprove(self, suggestion: ClientAction.Suggest):
+        disproving_cards = []
+        for card in self.player.cards:
+            for c in card:
+                if c.matches(suggestion.suggestion):
+                    disproving_cards.append(c)
+        print(card for card in disproving_cards)
+        choice = int(input("Which card: "))
+        selected_action = ClientAction.Disprove(suggestion.player_id, disproving_cards[choice])
+        return selected_action
+
     def next_action(self) -> ClientAction.BaseAction:
         print("Choose an action: ")
         actions = self.__available_actions()
@@ -57,7 +68,8 @@ class ClientGameManager:
                 print([weapon.value for weapon in Weapon])
                 print([location.value for location in Location])
 
-                c, w, l = int(input("select character: ")), int(input("select weapon: ")), int(input("select location: "))
+                c, w, l = int(input("select character: ")), int(input("select weapon: ")), int(
+                    input("select location: "))
 
                 selected_action = ClientAction.Suggest(player_id=self.player.player_id,
                                                        suggestion=(

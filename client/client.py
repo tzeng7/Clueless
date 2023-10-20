@@ -79,8 +79,16 @@ class GameClient(ConnectionListener):
     def Network_ClientAction_suggest(self, data):
         print("*** Received suggestion")
         suggest: ClientAction.Suggest = ClientAction.Suggest.deserialize(data)
+        self.Send(self.game_manager.disprove(suggest))
 
-        self.Send(self.game_manager.next_action())
+        if suggest.player_id == self.player.player_id:
+            self.Send(self.game_manager.next_action())
+        # self.Send(self.game_manager.next_action())
+
+    def Network_ClientAction_disprove(self, data):
+        disprove: ClientAction.Disprove = ClientAction.Disprove.deserialize(data)
+        print(f"*** Received disprove {disprove.card}")
+        self.Send(self.game_manager.disprove(disprove))
 
     def Network_deal_cards(self, data):
         deal_cards: DealCards = DealCards.deserialize(data)

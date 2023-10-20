@@ -58,5 +58,6 @@ class CardType(Enum):
 class ActionType(Enum):
     MOVE = "move"
     SUGGEST = "suggest"
+    DISPROVE = "disprove"
     ACCUSE = "accuse"
     END_TURN = "end_turn"

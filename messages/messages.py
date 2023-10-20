@@ -64,12 +64,18 @@ class ClientAction:
             super().__init__(player_id)
             self.suggestion = suggestion
 
+    class Disprove(BaseAction):
+        action_type = ActionType.DISPROVE
+
+        def __init__(self, player_id: PlayerID, card: Card):
+            super().__init__(player_id)
+            self.card = card
+
     class EndTurn(BaseAction):
         action_type = ActionType.END_TURN
 
         def __init__(self, player_id: PlayerID):
             super().__init__(player_id)
-
 
 # CLIENT BOUND
 

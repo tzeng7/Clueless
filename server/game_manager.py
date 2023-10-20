@@ -51,10 +51,17 @@ class GameManager:
     def suggest(self, suggest_action: ClientAction.Suggest):
         # move accused to accuser's location
         print("up to here")
-        self.SendToAll(suggest_action)  # TODO: move weapon into location
-
+        current = suggest_action.player_id
+        index = 0
+        for i in range(len(self.players)):
+            if current.__eq__(self.players[i].player_id):
+                index = i
+        next_player = self.players[index + 1 % len(self.players)]
+        self.SendToPlayerWithId(next_player.player_id, suggest_action)  # TODO: move weapon into location
         # cue suggestion_responses
 
+    def disprove(self, suggest_action: ClientAction.Suggest):
+        print("hi")
     def accuse(self, accuser, character, weapon, location):
         # deactivate player if wrong; return boolean whether right or wrong
         if (character, weapon, location) == self.winning_combination:
@@ -76,6 +83,9 @@ class GameManager:
         cards.extend([Card(CardType.WEAPON, x.value) for x in Weapon if not x.value == self.winning_combination[2]])
         random.shuffle(cards)
         return cards
+
+    ## disprove
+
 
     ################################
     #       NETWORKING HELPERS     #
