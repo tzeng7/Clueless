@@ -1,5 +1,5 @@
 from client_player import ClientPlayer
-from messages.messages import ClientAction
+from messages.messages import BaseClientAction, Move, Suggest, Disprove, EndTurn
 from model.board import Board
 from model.board_enums import ActionType, Direction, Character, Weapon, Location
 
@@ -8,7 +8,7 @@ class Turn:
 
     def __init__(self, turn_id):
         self.turn_id: int = turn_id
-        self.actions_taken: list[ClientAction] = []
+        self.actions_taken: list[BaseClientAction] = []
 
 
 class ClientGameManager:
@@ -22,7 +22,7 @@ class ClientGameManager:
         self.previous_turn = self.current_turn
         self.current_turn = Turn(turn_id=turn_id)
 
-    def disprove(self, suggestion: ClientAction.Suggest):
+    def disprove(self, suggestion: Suggest):
         disproving_cards = []
         for card in self.player.cards:
             for c in card:
@@ -30,10 +30,10 @@ class ClientGameManager:
                     disproving_cards.append(c)
         print(card for card in disproving_cards)
         choice = int(input("Which card: "))
-        selected_action = ClientAction.Disprove(suggestion.player_id, disproving_cards[choice])
+        selected_action = Disprove(suggestion.player_id, disproving_cards[choice])
         return selected_action
 
-    def next_action(self) -> ClientAction.BaseAction:
+    def next_action(self) -> BaseClientAction:
         print("Choose an action: ")
         actions = self.__available_actions()
         for index, action in enumerate(actions):
@@ -48,7 +48,7 @@ class ClientGameManager:
                 # TODO: LOG BOARD // TEST EACH DIRECTION AND TRAVERSE WHOLE BOARD // TEST BEING BLOCKED IN HALLWAY
                 # print out which room has what per row of grid // string wrapper for board
                 if not self.player.initialized:
-                    selected_action = ClientAction.Move(
+                    selected_action = Move(
                         player_id=self.player.player_id,
                         position=self.player.character.get_starting_position()
                     )
@@ -58,7 +58,7 @@ class ClientGameManager:
                     for idx, possible_choice in enumerate(possible_directions):
                         print(f"{idx + 1}. {possible_choice[0].name}")
                     choice = int(input("Choose direction: "))
-                    selected_action = ClientAction.Move(
+                    selected_action = Move(
                         player_id=self.player.player_id,
                         position=possible_directions[choice - 1][1]
                     )
@@ -71,13 +71,13 @@ class ClientGameManager:
                 c, w, l = int(input("select character: ")), int(input("select weapon: ")), int(
                     input("select location: "))
 
-                selected_action = ClientAction.Suggest(player_id=self.player.player_id,
-                                                       suggestion=(
-                                                           list(Character)[c], list(Weapon)[w], list(Location)[l]))
+                selected_action = Suggest(player_id=self.player.player_id,
+                                          suggestion=(
+                                              list(Character)[c], list(Weapon)[w], list(Location)[l]))
             case ActionType.ACCUSE:
-                selected_action = ClientAction.EndTurn(player_id=self.player.player_id)
+                selected_action = EndTurn(player_id=self.player.player_id)
             case ActionType.END_TURN:
-                selected_action = ClientAction.EndTurn(player_id=self.player.player_id)
+                selected_action = EndTurn(player_id=self.player.player_id)
             case _:
                 raise NotImplementedError("ActionType not yet implemented!")
         self.current_turn.actions_taken.append(selected_action)

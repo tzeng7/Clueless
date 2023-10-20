@@ -2,7 +2,8 @@ from PodSixNet.Channel import Channel
 from PodSixNet.Server import Server
 import time
 
-from messages.messages import JoinGame, StartGame, UpdatePlayers, AssignPlayerID, ClientAction, BaseMessage
+from messages.messages import JoinGame, StartGame, UpdatePlayers, AssignPlayerID, BaseClientAction, BaseMessage, Move, \
+    Suggest, Disprove, EndTurn
 from model.board_enums import Character
 from model.player import PlayerID
 from game_manager import GameManager
@@ -37,22 +38,22 @@ class ClientChannel(Channel):
         self._server.set_ready_for_player(self)
 
     def Network_ClientAction_move(self, data):
-        move_action = ClientAction.Move.deserialize(data)
+        move_action = Move.deserialize(data)
         print(f"Received ClientAction_move from client channel {self}")
         self._server.move(self, move_action)
 
     def Network_ClientAction_suggest(self, data):
-        suggest_action = ClientAction.Suggest.deserialize(data)
+        suggest_action = Suggest.deserialize(data)
         print(f"Received ClientAction_suggest from client channel {self}")
         self._server.suggest(self, suggest_action)
 
     def Network_ClientAction_disprove(self, data):
-        disprove_action = ClientAction.Disprove.deserialize(data)
+        disprove_action = Disprove.deserialize(data)
         print(f"Received ClientAction_disprove from client channel {self}")
         self._server.disprove(self, disprove_action)
 
     def Network_ClientAction_end_turn(self, data):
-        end_turn_action = ClientAction.EndTurn.deserialize(data)
+        end_turn_action = EndTurn.deserialize(data)
         print(f"Received ClientAction_end_turn from client channel {self}")
         self._server.end_turn(end_turn_action)
 
@@ -108,17 +109,17 @@ class ClueServer(Server):
         self.SendToAll(StartGame(board=self.game_manager.board))
         self.game_manager.start_game()
 
-    def move(self, channel, move_action: ClientAction.Move):
+    def move(self, channel, move_action: Move):
         player_to_move = self.player_queue[channel]
         self.game_manager.move(player_to_move, move_action)
 
-    def suggest(self, channel, suggest_action: ClientAction.Suggest):
+    def suggest(self, channel, suggest_action: Suggest):
         self.game_manager.suggest(suggest_action)
 
-    def disprove(self, channel, disprove_action: ClientAction.Disprove):
+    def disprove(self, channel, disprove_action: Disprove):
         self.game_manager.disprove(disprove_action)
 
-    def end_turn(self, end_turn_action: ClientAction.EndTurn):
+    def end_turn(self, end_turn_action: EndTurn):
         self.game_manager.end_turn(end_turn_action)
 
     ################################

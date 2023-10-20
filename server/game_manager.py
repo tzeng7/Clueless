@@ -1,4 +1,4 @@
-from messages.messages import DealCards, YourTurn, ClientAction, BaseMessage
+from messages.messages import DealCards, YourTurn, BaseMessage, Suggest, Move, EndTurn
 from model.board import Board
 from model.board_enums import Character, Location, Weapon, CardType
 import random
@@ -37,18 +37,18 @@ class GameManager:
         self.current_player = self.players[self.turn % len(self.players)]
         self.current_player.Send(YourTurn(turn_id=self.turn))
 
-    def end_turn(self, end_action: ClientAction.EndTurn):
+    def end_turn(self, end_action: EndTurn):
         self.SendToAll(end_action)
         self.next_turn()
 
-    def move(self, player, move_action: ClientAction.Move):
+    def move(self, player, move_action: Move):
         # TODO: Needs implementation!
 
         # self.board.move(player, move_action.position)
         # TODO: Add error handling
         self.SendToAll(move_action)
 
-    def suggest(self, suggest_action: ClientAction.Suggest):
+    def suggest(self, suggest_action: Suggest):
         # move accused to accuser's location
         print("up to here")
         current = suggest_action.player_id
@@ -56,11 +56,11 @@ class GameManager:
         for i in range(len(self.players)):
             if current.__eq__(self.players[i].player_id):
                 index = i
-        next_player = self.players[index + 1 % len(self.players)]
+        next_player = self.players[(index + 1) % len(self.players)]
         self.SendToPlayerWithId(next_player.player_id, suggest_action)  # TODO: move weapon into location
         # cue suggestion_responses
 
-    def disprove(self, suggest_action: ClientAction.Suggest):
+    def disprove(self, suggest_action: Suggest):
         print("hi")
     def accuse(self, accuser, character, weapon, location):
         # deactivate player if wrong; return boolean whether right or wrong

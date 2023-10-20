@@ -4,8 +4,8 @@ from threading import Thread
 
 from client_game_manager import ClientGameManager
 from client_player import ClientPlayer
-from messages.messages import JoinGame, Ready, UpdatePlayers, AssignPlayerID, DealCards, YourTurn, ClientAction, \
-    BaseMessage, StartGame
+from messages.messages import JoinGame, Ready, UpdatePlayers, AssignPlayerID, DealCards, YourTurn, \
+    BaseMessage, StartGame, Move, Suggest, Disprove
 
 
 class GameClient(ConnectionListener):
@@ -68,7 +68,7 @@ class GameClient(ConnectionListener):
 
     def Network_ClientAction_move(self, data):
         print("*** Received move!")
-        move: ClientAction.Move = ClientAction.Move.deserialize(data)
+        move: Move = Move.deserialize(data)
         # TODO: update board state
 
         self.game_manager.board.move(move.player_id, move.position)
@@ -78,17 +78,20 @@ class GameClient(ConnectionListener):
 
     def Network_ClientAction_suggest(self, data):
         print("*** Received suggestion")
-        suggest: ClientAction.Suggest = ClientAction.Suggest.deserialize(data)
+        suggest: Suggest = Suggest.deserialize(data)
         self.Send(self.game_manager.disprove(suggest))
 
-        if suggest.player_id == self.player.player_id:
-            self.Send(self.game_manager.next_action())
+
+        # if suggest.player_id == self.player.player_id:
+        #     self.Send(self.game_manager.next_action())
         # self.Send(self.game_manager.next_action())
 
     def Network_ClientAction_disprove(self, data):
-        disprove: ClientAction.Disprove = ClientAction.Disprove.deserialize(data)
+        disprove: Disprove = Disprove.deserialize(data)
         print(f"*** Received disprove {disprove.card}")
         self.Send(self.game_manager.disprove(disprove))
+        #     self.Send(self.game_manager.next_action())
+
 
     def Network_deal_cards(self, data):
         deal_cards: DealCards = DealCards.deserialize(data)
