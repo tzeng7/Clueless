@@ -28,9 +28,9 @@ class ClientGameManager:
             for c in card:
                 if c.matches(suggestion.suggestion):
                     disproving_cards.append(c)
-        print(card for card in disproving_cards)
-        choice = int(input("Which card: "))
-        selected_action = Disprove(suggestion.player_id, disproving_cards[choice])
+        print([card for card in disproving_cards])
+        choice = int(input("Which card: ")) #TODO: what if no card to disprove
+        selected_action = Disprove(suggestion.player_id, disproving_cards[choice], suggestion)
         return selected_action
 
     def next_action(self) -> BaseClientAction:
@@ -62,7 +62,6 @@ class ClientGameManager:
                         player_id=self.player.player_id,
                         position=possible_directions[choice - 1][1]
                     )
-                # TODO: Suggest/Accuse
             case ActionType.SUGGEST:
                 print([character.value for character in list(Character)])
                 print([weapon.value for weapon in Weapon])
@@ -89,17 +88,18 @@ class ClientGameManager:
     #     self.previous_turn = self.current_turn
     #     self.current_turn = new_turn
 
-    def __available_actions(self) -> list[ActionType]:
+    def __available_actions(self):
         if not self.player.active:
             return [ActionType.END_TURN]
-        available = list(ActionType)
-
-        if self.current_turn.actions_taken:
             # consider all actions that come after the action we just took.
             # e.g. if SUGGEST was the last move, only ACCUSE and END_TURN should be available
+        available = [action_type for action_type in list(ActionType) if action_type.is_user_initiated()]
+
+        if self.current_turn.actions_taken:
+                # consider all actions that come after the action we just took.
+                # e.g. if SUGGEST was the last move, only ACCUSE and END_TURN should be available
             last_action = self.current_turn.actions_taken[-1].action_type
             available = available[(available.index(last_action) + 1):]
-
         # TODO: remove the SUGGEST option if we suggested in this room last turn,
         # and we did not move into a room by another player's suggestion
         return available

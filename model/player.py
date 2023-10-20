@@ -35,7 +35,7 @@ class PlayerIDWrapper:
         return self.player_id.character
 
 
-class PlayerToken(PlayerIDWrapper): # TODO: Confirm that this needs to be a subclass
+class PlayerToken(PlayerIDWrapper):
     def __init__(self, player_id: PlayerID):
         super().__init__(player_id=player_id)
         self.position = None

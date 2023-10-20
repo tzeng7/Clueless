@@ -50,7 +50,7 @@ class Board:
     def move(self, player_id, position):
         player_token = self.player_tokens[player_id]
         if not self.grid[position[0]][position[1]].can_add():
-            print("Error: Cannot add player to space") # TODO: Throw?
+            print("Error: Cannot add player to space")
             return
         if player_token.position is None:
             self.grid[position[0]][position[1]].add(player_token)

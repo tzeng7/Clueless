@@ -61,3 +61,12 @@ class ActionType(Enum):
     DISPROVE = "disprove"
     ACCUSE = "accuse"
     END_TURN = "end_turn"
+
+    def is_user_initiated(self):
+        match self:
+            case ActionType.DISPROVE:
+                return False
+            case _:
+                return True
+
+

@@ -104,7 +104,6 @@ class ClueServer(Server):
     ################################
 
     def start_game(self):
-        # TODO Turn management
         self.game_manager = GameManager(players=self.player_queue.values())
         self.SendToAll(StartGame(board=self.game_manager.board))
         self.game_manager.start_game()
@@ -112,6 +111,7 @@ class ClueServer(Server):
     def move(self, channel, move_action: Move):
         player_to_move = self.player_queue[channel]
         self.game_manager.move(player_to_move, move_action)
+
 
     def suggest(self, channel, suggest_action: Suggest):
         self.game_manager.suggest(suggest_action)
