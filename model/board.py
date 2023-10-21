@@ -47,6 +47,12 @@ class Board:
             [Room(Location.CONSERVATORY), Hallway(), Room(Location.BALLROOM), Hallway(), Room(Location.KITCHEN)]
         ]
 
+    # def to_string(self):
+    #     for x in range(len(self.grid)):
+    #         for y in range(len(self.grid[0])):
+    #             print(f"Position: {(x,y)} has "),
+    #             print( for player in self.grid[x][y].players)
+
     def move(self, player_id, position):
         player_token = self.player_tokens[player_id]
         if not self.grid[position[0]][position[1]].can_add():
@@ -99,3 +105,8 @@ class Board:
             case _:
                 raise ValueError("Invalid direction")
         return new_position
+
+    def is_room(self, position):
+        if position[0] % 2 == 0 and position[1] % 2 == 0:
+            return True
+        return False

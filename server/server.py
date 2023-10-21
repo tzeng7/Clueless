@@ -115,6 +115,8 @@ class ClueServer(Server):
 
     def suggest(self, channel, suggest_action: Suggest):
         self.game_manager.suggest(suggest_action)
+        #TODO: list out rules of when suggest can be called
+
 
     def disprove(self, channel, disprove_action: Disprove):
         self.game_manager.disprove(disprove_action)
