@@ -70,7 +70,7 @@ class Suggest(BaseClientAction):
 class Disprove(BaseClientAction):
     action_type = ActionType.DISPROVE
 
-    def __init__(self, player_id: PlayerID, card: Card, suggest: Suggest):
+    def __init__(self, player_id: PlayerID, card: Card | None, suggest: Suggest):
         super().__init__(player_id)
         self.card = card
         self.suggest = suggest

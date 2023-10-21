@@ -29,8 +29,12 @@ class ClientGameManager:
                 if c.matches(suggestion.suggestion):
                     disproving_cards.append(c)
         print([card for card in disproving_cards])
-        choice = int(input("Which card: "))  # TODO: what if no card to disprove
-        selected_action = Disprove(suggestion.player_id, disproving_cards[choice], suggestion)
+        if not disproving_cards:
+            input("No cards to disprove: Hit enter")
+            selected_action = Disprove(self.player.player_id, None, suggestion)
+        else:
+            choice = int(input("Which card: "))  # TODO: what if no card to disprove
+            selected_action = Disprove(self.player.player_id, disproving_cards[choice], suggestion)
         return selected_action
 
     def next_action(self) -> BaseClientAction:
@@ -106,13 +110,8 @@ class ClientGameManager:
             # consider all actions that come after the action we just took.
             # e.g. if SUGGEST was the last move, only ACCUSE and END_TURN should be available
             last_action = self.current_turn.actions_taken[-1].action_type
+            available = available[(available.index(last_action) + 1):]
 
-            for player in self.board.player_tokens:
-                if player.__eq__(self.player.player_id) and self.board.is_room(
-                        self.board.player_tokens[player].position):
-                    available = available[(available.index(last_action) + 1):]
-
-                else: available = available[(available.index(last_action) + 2):]
         # TODO: remove the SUGGEST option if we suggested in this room last turn,
         # you can only suggest in a room
         # and we did not move into a room by another player's suggestion

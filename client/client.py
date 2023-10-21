@@ -86,7 +86,10 @@ class GameClient(ConnectionListener):
 
     def Network_ClientAction_disprove(self, data):
         disprove: Disprove = Disprove.deserialize(data)
-        print(f"*** Received disprove {disprove.card}")
+        if not disprove.card:
+            print(f"*** No one can disprove suggestion")
+        else:
+            print(f"*** Received disprove {disprove.card}")
         self.Send(self.game_manager.next_action())
 
     def Network_request_disprove(self, data):

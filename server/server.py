@@ -112,11 +112,9 @@ class ClueServer(Server):
         player_to_move = self.player_queue[channel]
         self.game_manager.move(player_to_move, move_action)
 
-
     def suggest(self, channel, suggest_action: Suggest):
         self.game_manager.suggest(suggest_action)
-        #TODO: list out rules of when suggest can be called
-
+        # TODO: list out rules of when suggest can be called
 
     def disprove(self, channel, disprove_action: Disprove):
         self.game_manager.disprove(disprove_action)
