@@ -3,7 +3,7 @@ import uuid
 from typing import Self
 
 from model.board import Board
-from model.board_enums import Direction, ActionType
+from model.board_enums import Direction, ActionType, Character, Weapon, Location
 from model.card import Card
 from model.player import PlayerID
 
@@ -36,31 +36,51 @@ class Ready(BaseMessage):
     name = "ready"
 
 
-class ClientAction:
-    class BaseAction(BaseMessage):
-        name = "ClientAction"
+class BaseClientAction(BaseMessage):
+    name = "ClientAction"
 
-        def __init__(self, player_id: PlayerID):
-            super().__init__()
-            self.player_id = player_id
-            if hasattr(self, "action_type") and self.action_type:
-                self.name = f"ClientAction_{self.action_type.value}"
+    def __init__(self, player_id: PlayerID):
+        super().__init__()
+        self.player_id = player_id
+        if hasattr(self, "action_type") and self.action_type:
+            self.name = f"ClientAction_{self.action_type.value}"
 
         @staticmethod
         def name_for_action(action_type: ActionType):
             return f"ClientAction_{action_type.value}"
 
-    class Move(BaseAction):
-        action_type = ActionType.MOVE
-        def __init__(self, player_id: PlayerID, position: (int, int)):
-            super().__init__(player_id)
-            self.position = position
 
-    class EndTurn(BaseAction):
-        action_type = ActionType.END_TURN
+class Move(BaseClientAction):
+    action_type = ActionType.MOVE
 
-        def __init__(self, player_id: PlayerID):
-            super().__init__(player_id)
+
+    def __init__(self, player_id: PlayerID, position: (int, int)):
+        super().__init__(player_id)
+        self.position = position
+
+
+class Suggest(BaseClientAction):
+    action_type = ActionType.SUGGEST
+
+    def __init__(self, player_id: PlayerID, suggestion: (Character, Weapon, Location)):
+        super().__init__(player_id)
+        self.suggestion = suggestion
+
+
+class Disprove(BaseClientAction):
+    action_type = ActionType.DISPROVE
+
+    def __init__(self, player_id: PlayerID, card: Card | None, suggest: Suggest):
+        super().__init__(player_id)
+        self.card = card
+        self.suggest = suggest
+
+
+class EndTurn(BaseClientAction):
+    action_type = ActionType.END_TURN
+
+    def __init__(self, player_id: PlayerID):
+        super().__init__(player_id)
 
 
 # CLIENT BOUND
@@ -103,3 +123,11 @@ class YourTurn(BaseMessage):
     def __init__(self, turn_id: int):
         super().__init__()
         self.turn_id: int = turn_id
+
+
+class RequestDisprove(BaseMessage):
+    name = "request_disprove"
+
+    def __init__(self, suggest: Suggest):
+        super().__init__()
+        self.suggest = suggest

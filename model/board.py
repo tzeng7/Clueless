@@ -47,10 +47,16 @@ class Board:
             [Room(Location.CONSERVATORY), Hallway(), Room(Location.BALLROOM), Hallway(), Room(Location.KITCHEN)]
         ]
 
+    # def to_string(self):
+    #     for x in range(len(self.grid)):
+    #         for y in range(len(self.grid[0])):
+    #             print(f"Position: {(x,y)} has "),
+    #             print( for player in self.grid[x][y].players)
+
     def move(self, player_id, position):
         player_token = self.player_tokens[player_id]
         if not self.grid[position[0]][position[1]].can_add():
-            print("Error: Cannot add player to space") # TODO: Throw?
+            print("Error: Cannot add player to space")
             return
         if player_token.position is None:
             self.grid[position[0]][position[1]].add(player_token)
@@ -70,14 +76,16 @@ class Board:
 
     def get_movement_options(self, player_id) -> list[(Direction, (int, int))]:
         player_token = self.player_tokens[player_id]
+        if not player_token.position:
+            return [(Direction.INITIALIZE, player_id.character.get_starting_position())]
         valid_directions = []
-        for direction in Direction:
+        for direction in [d for d in Direction if d.value > Direction.INITIALIZE.value]:
             try:
                 new_position = self.__calculate_new_position(player_token.position, direction)
                 if self.grid[new_position[0]][new_position[1]].can_add():
                     valid_directions.append((direction, new_position))
             except ValueError:
-                print(f"{direction.value} is not valid")
+                print(f"Excluding {direction.name}")
         return valid_directions
 
     def __calculate_new_position(self, from_position, direction):
@@ -99,3 +107,11 @@ class Board:
             case _:
                 raise ValueError("Invalid direction")
         return new_position
+
+    def get_player_space(self, player_id) -> Space:
+        position = self.player_tokens[player_id].position
+        return self.grid[position[0]][position[1]]
+
+    def is_in_room(self, player_id):
+        space = self.get_player_space(player_id)
+        return isinstance(space, Room)

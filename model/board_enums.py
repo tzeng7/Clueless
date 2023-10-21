@@ -42,11 +42,13 @@ class Character(Enum):
 
 
 class Direction(Enum):
+    INITIALIZE = 0
     UP = 1
     DOWN = 2
     LEFT = 3
     RIGHT = 4
     SECRET_PASSAGEWAY = 5
+
 
 
 class CardType(Enum):
@@ -58,5 +60,15 @@ class CardType(Enum):
 class ActionType(Enum):
     MOVE = "move"
     SUGGEST = "suggest"
+    DISPROVE = "disprove"
     ACCUSE = "accuse"
     END_TURN = "end_turn"
+
+    def is_user_initiated(self):
+        match self:
+            case ActionType.DISPROVE:
+                return False
+            case _:
+                return True
+
+

@@ -9,11 +9,18 @@ class ClientPlayer(PlayerIDWrapper):
         self.cards = []
         # self.can_suggest = False
         self.active = True
-        self.initialized = False
+        self.has_moved = False
 
     def suggestion_responses(self, suggestion: Suggestion):
         return [card for card in self.cards if card.matches(suggestion)]
 
+    @property
+    def has_moved(self):
+        return self._has_moved
+
+    @has_moved.setter
+    def has_moved(self, has_moved):
+        self._has_moved = has_moved
     @property
     def active(self):
         return self._active
