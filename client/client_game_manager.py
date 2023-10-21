@@ -1,6 +1,8 @@
+from typing import cast
+
 from client_player import ClientPlayer
 from messages.messages import BaseClientAction, Move, Suggest, Disprove, EndTurn
-from model.board import Board
+from model.board import Board, Room
 from model.board_enums import ActionType, Direction, Character, Weapon, Location
 
 
@@ -52,28 +54,21 @@ class ClientGameManager:
                 # TODO: LOG BOARD // TEST EACH DIRECTION AND TRAVERSE WHOLE BOARD // TEST BEING BLOCKED IN HALLWAY
                 # TODO: WHAT IF THERE ARE NO DIRECTIONS YOU CAN MOVE
                 # print out which room has what per row of grid // string wrapper for board
-                if not self.player.initialized:
-                    selected_action = Move(
-                        player_id=self.player.player_id,
-                        position=self.player.character.get_starting_position()
-                    )
-                    self.player.initialized = True
-                else:
-                    possible_directions = self.board.get_movement_options(self.player.player_id)
-                    for idx, possible_choice in enumerate(possible_directions):
-                        print(f"{idx + 1}. {possible_choice[0].name}")
-                    choice = int(input("Choose direction: "))
-                    selected_action = Move(
-                        player_id=self.player.player_id,
-                        position=possible_directions[choice - 1][1]
-                    )
+                possible_directions = self.board.get_movement_options(self.player.player_id)
+                for idx, possible_choice in enumerate(possible_directions):
+                    print(f"{idx + 1}. {possible_choice[0].name}")
+                choice = int(input("Choose direction: "))
+                selected_action = Move(
+                    player_id=self.player.player_id,
+                    position=possible_directions[choice - 1][1]
+                )
             case ActionType.SUGGEST:
                 print([character.value for character in list(Character)])
                 print([weapon.value for weapon in Weapon])
 
-                current_position = self.board.player_tokens[self.player.player_id].position
-                if self.board.is_room(current_position):
-                    location = self.board.grid[current_position[0]][current_position[1]].room_type
+                space = self.board.get_player_space(self.player.player_id)
+                if self.board.is_in_room(self.player.player_id):
+                    location = cast(Room, space).room_type
                 else:
                     raise RuntimeError("Tried to make a suggestion but not a room")
 
@@ -101,11 +96,10 @@ class ClientGameManager:
     def __available_actions(self):
 
         available = []
-        if (not self.board.player_tokens[self.player.player_id].position or self.board.get_movement_options(self.player.player_id)) \
-                and not self.current_turn.actions_taken:
+        if self.board.get_movement_options(self.player.player_id) and not self.current_turn.actions_taken:
             available.append(ActionType.MOVE)
         elif self.current_turn.actions_taken[-1].action_type == ActionType.MOVE and \
-                self.board.is_room(self.board.player_tokens[self.player.player_id].position):  # or moved by suggestion
+                self.board.is_in_room(self.player.player_id):  # or moved by suggestion
             available.append(ActionType.SUGGEST)
         available.append(ActionType.ACCUSE)
         if len(available) == 1 and available[0] == ActionType.ACCUSE:

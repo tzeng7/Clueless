@@ -76,8 +76,10 @@ class Board:
 
     def get_movement_options(self, player_id) -> list[(Direction, (int, int))]:
         player_token = self.player_tokens[player_id]
+        if not player_token.position:
+            return [(Direction.INITIALIZE, player_id.character.get_starting_position())]
         valid_directions = []
-        for direction in Direction:
+        for direction in [d for d in Direction if d.value > Direction.INITIALIZE.value]:
             try:
                 new_position = self.__calculate_new_position(player_token.position, direction)
                 if self.grid[new_position[0]][new_position[1]].can_add():
@@ -106,7 +108,10 @@ class Board:
                 raise ValueError("Invalid direction")
         return new_position
 
-    def is_room(self, position):
-        if position[0] % 2 == 0 and position[1] % 2 == 0:
-            return True
-        return False
+    def get_player_space(self, player_id) -> Space:
+        position = self.player_tokens[player_id].position
+        return self.grid[position[0]][position[1]]
+
+    def is_in_room(self, player_id):
+        space = self.get_player_space(player_id)
+        return isinstance(space, Room)
