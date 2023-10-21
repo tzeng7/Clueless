@@ -33,7 +33,7 @@ class ClientGameManager:
             input("No cards to disprove: Hit enter")
             selected_action = Disprove(self.player.player_id, None, suggestion)
         else:
-            choice = int(input("Which card: "))  # TODO: what if no card to disprove
+            choice = int(input("Which card: "))
             selected_action = Disprove(self.player.player_id, disproving_cards[choice], suggestion)
         return selected_action
 
@@ -70,14 +70,18 @@ class ClientGameManager:
             case ActionType.SUGGEST:
                 print([character.value for character in list(Character)])
                 print([weapon.value for weapon in Weapon])
-                print([location.value for location in Location])
 
-                c, w, l = int(input("select character: ")), int(input("select weapon: ")), int(
-                    input("select location: "))
+                current_position = self.board.player_tokens[self.player.player_id].position
+                if self.board.is_room(current_position):
+                    location = self.board.grid[current_position[0]][current_position[1]].room_type
+                else:
+                    raise RuntimeError("Tried to make a suggestion but not a room")
+
+                c, w = int(input("select character: ")), int(input("select weapon: "))
 
                 selected_action = Suggest(player_id=self.player.player_id,
                                           suggestion=(
-                                              list(Character)[c], list(Weapon)[w], list(Location)[l]))
+                                              list(Character)[c], list(Weapon)[w], location))
             case ActionType.ACCUSE:
                 selected_action = EndTurn(player_id=self.player.player_id)
             case ActionType.END_TURN:
@@ -95,24 +99,17 @@ class ClientGameManager:
     #     self.current_turn = new_turn
 
     def __available_actions(self):
-        if not self.player.active:
-            return [ActionType.END_TURN]
-        elif not self.player.has_moved:
-            self.player.has_moved = True
-            return [ActionType.MOVE]
 
-            # consider all actions that come after the action we just took.
-            # e.g. if SUGGEST was the last move, only ACCUSE and END_TURN should be available
-        available = [action_type for action_type in list(ActionType) if action_type.is_user_initiated()]
+        available = []
+        if (not self.board.player_tokens[self.player.player_id].position or self.board.get_movement_options(self.player.player_id)) \
+                and not self.current_turn.actions_taken:
+            available.append(ActionType.MOVE)
+        elif self.current_turn.actions_taken[-1].action_type == ActionType.MOVE and \
+                self.board.is_room(self.board.player_tokens[self.player.player_id].position):  # or moved by suggestion
+            available.append(ActionType.SUGGEST)
+        available.append(ActionType.ACCUSE)
+        if len(available) == 1 and available[0] == ActionType.ACCUSE:
+            available.append(ActionType.END_TURN)
 
-        # check if own player token is in a room with position
-        if self.current_turn.actions_taken:
-            # consider all actions that come after the action we just took.
-            # e.g. if SUGGEST was the last move, only ACCUSE and END_TURN should be available
-            last_action = self.current_turn.actions_taken[-1].action_type
-            available = available[(available.index(last_action) + 1):]
-
-        # TODO: remove the SUGGEST option if we suggested in this room last turn,
-        # you can only suggest in a room
-        # and we did not move into a room by another player's suggestion
+            # TODO: remove the SUGGEST option if we suggested in this room last turn,
         return available

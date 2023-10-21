@@ -83,7 +83,7 @@ class Board:
                 if self.grid[new_position[0]][new_position[1]].can_add():
                     valid_directions.append((direction, new_position))
             except ValueError:
-                print(f"{direction.value} is not valid")
+                print(f"Excluding {direction.name}")
         return valid_directions
 
     def __calculate_new_position(self, from_position, direction):
