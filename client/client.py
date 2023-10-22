@@ -79,6 +79,11 @@ class GameClient(ConnectionListener):
         print("*** Received suggestion")
         suggest: Suggest = Suggest.deserialize(data)
 
+        for player in self.game_manager.board.player_tokens:
+            if suggest.suggestion[0] == player.character:
+                self.game_manager.board.move(player, suggest.suggestion[2].get_position())
+                print("Moved suggested player.")
+
 
         # if suggest.player_id == self.player.player_id:
         #     self.Send(self.game_manager.next_action())
