@@ -1,23 +1,21 @@
+
 from PodSixNet.Connection import ConnectionListener, connection
 import time
 from threading import Thread
 
-from client_game_manager import ClientGameManager
 from client_player import ClientPlayer
-from messages.messages import JoinGame, Ready, UpdatePlayers, AssignPlayerID, DealCards, YourTurn, RequestDisprove, \
-    Disprove, BaseMessage, StartGame, Move, Suggest
+from messages.messages import JoinGame, Ready, UpdatePlayers, AssignPlayerID, DealCards,MakeMoveMessage
 
 
 class GameClient(ConnectionListener):
     def __init__(self, host, port):
         self.player: ClientPlayer = None
-        self.game_manager: ClientGameManager = None
         self.Connect((host, port))
         print("Player client started")
         print("Ctrl-C to exit")
         # get a nickname from the user before starting
         nickname = input("Enter your nickname: ")
-        self.Send(JoinGame(nickname=nickname))
+        connection.Send(JoinGame(nickname=nickname).serialize())
 
         # listen for ready on a separate thread, in order to not block the thread,
         # which will prevent the client from receiving updates about other players joining.
@@ -30,17 +28,15 @@ class GameClient(ConnectionListener):
 
         time.sleep(0.001)
 
-    def Send(self, data: BaseMessage):
-        connection.Send(data.serialize())
 
     #######################################
     ### Keyboard I/O callbacks          ###
     #######################################
     def listen_for_ready(self):
-        time.sleep(2)
+        time.sleep(3)
         print(input("Hit any key when ready!\n"))
         print("READY!")
-        self.Send(Ready())
+        connection.Send(Ready().serialize())
 
     #######################################
     ### Network event/message callbacks ###
@@ -51,55 +47,40 @@ class GameClient(ConnectionListener):
         print(f"*** you are: {player_id}")
         self.player = ClientPlayer(player_id=player_id)
 
+
     def Network_update_players(self, data):
         update_players: UpdatePlayers = UpdatePlayers.deserialize(data)
         print(f"*** players: {[p for p in update_players.players]}")
 
     def Network_start_game(self, data):
         print("*** Game Started!")
-        board = StartGame.deserialize(data).board
-        self.game_manager = ClientGameManager(player=self.player, board=board)
-
-    def Network_start_turn(self, data):
-        print("*** Turn start!")
-        turn_id = YourTurn.deserialize(data).turn_id
-        self.game_manager.start_turn(turn_id=turn_id)  # managing turn history
-        self.Send(self.game_manager.next_action())
-
-    def Network_ClientAction_move(self, data):
-        print("*** Received move!")
-        move: Move = Move.deserialize(data)
-
-        self.game_manager.board.move(move.player_id, move.position)
-        # self.game_manager.board.move(move., move.position)
-        if move.player_id == self.player.player_id:
-            self.Send(self.game_manager.next_action())
-
-    def Network_ClientAction_suggest(self, data):
-        print("*** Received suggestion")
-        suggest: Suggest = Suggest.deserialize(data)
-
-
-        # if suggest.player_id == self.player.player_id:
-        #     self.Send(self.game_manager.next_action())
-        # self.Send(self.game_manager.next_action())
-
-    def Network_ClientAction_disprove(self, data):
-        disprove: Disprove = Disprove.deserialize(data)
-        if not disprove.card:
-            print(f"*** No one can disprove suggestion")
-        else:
-            print(f"*** Received disprove {disprove.card}")
-        self.Send(self.game_manager.next_action())
-
-    def Network_request_disprove(self, data):
-        request_disprove = RequestDisprove.deserialize(data)
-        self.Send(self.game_manager.disprove(request_disprove.suggest))
 
     def Network_deal_cards(self, data):
         deal_cards: DealCards = DealCards.deserialize(data)
         self.player.cards.append(deal_cards.cards)
         print(f"*** Received cards: {self.player.cards}")
+
+
+    #------------start of modification-------------#
+    def handle_make_move(self, move_data):
+        # Implement handling player's move here
+
+        pass
+
+    def Network_your_turn(self, data):
+        print("It's your turn")
+        # Implement actions for the current player's turn
+
+    def Network_not_your_turn(self, data):
+        print("It's not your turn")
+        # Implement actions for when it's not the player's turn
+
+
+
+    def make_move(self, move_data):
+        connection.Send(MakeMoveMessage(move_data=move_data).serialize())
+
+    # ------------end of modification-------------#
 
     # built in stuff
 
