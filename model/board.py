@@ -1,4 +1,4 @@
-from model.board_enums import Location, Direction
+from model.board_enums import Location, Direction, Character
 from model.player import PlayerToken, PlayerID
 
 
@@ -115,3 +115,12 @@ class Board:
     def is_in_room(self, player_id):
         space = self.get_player_space(player_id)
         return isinstance(space, Room)
+
+    def get_player_id(self, character: Character):
+        for player in self.player_tokens:
+            if player.character == character:
+                return player
+
+    def get_player_position(self, player_id):
+        return self.player_tokens[player_id].position
+

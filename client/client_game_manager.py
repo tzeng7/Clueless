@@ -12,6 +12,9 @@ class Turn:
         self.turn_id: int = turn_id
         self.actions_taken: list[BaseClientAction] = []
 
+    def is_last_action_move(self):
+        return self.actions_taken and self.actions_taken[-1].action_type == ActionType.MOVE
+
 
 class ClientGameManager:
     def __init__(self, player, board):
@@ -62,6 +65,7 @@ class ClientGameManager:
                     player_id=self.player.player_id,
                     position=possible_directions[choice - 1][1]
                 )
+
             case ActionType.SUGGEST:
                 print([character.value for character in list(Character)])
                 print([weapon.value for weapon in Weapon])
@@ -80,30 +84,36 @@ class ClientGameManager:
             case ActionType.ACCUSE:
                 selected_action = EndTurn(player_id=self.player.player_id)
             case ActionType.END_TURN:
-                self.player.has_moved = False  # added for suggest rules
                 selected_action = EndTurn(player_id=self.player.player_id)
+
             case _:
                 raise NotImplementedError("ActionType not yet implemented!")
         self.current_turn.actions_taken.append(selected_action)
         return selected_action
 
-    # def move_from_suggestion(self, turn_id, suggestion: ClientAction.Move):
-    #     new_turn = Turn(turn_id=turn_id)
-    #     new_turn.actions_taken = [ActionType.MOVE]
-    #     self.previous_turn = self.current_turn
-    #     self.current_turn = new_turn
+    def handle_suggestion(self, suggest: Suggest):
+        suggested_player_id = self.board.get_player_id(suggest.suggestion[0])
+        location = suggest.suggestion[2].get_position()
+        if not location == self.board.get_player_position(suggested_player_id): #no change in location so we don't move
+            self.board.move(suggested_player_id, location)
+            if suggested_player_id == self.player.player_id:
+                self.player.is_lastmove_suggested = True
+                print(f"Moved current player by suggestion: {self.player.is_lastmove_suggested}")
 
     def __available_actions(self):
 
         available = []
+
         if self.board.get_movement_options(self.player.player_id) and not self.current_turn.actions_taken:
             available.append(ActionType.MOVE)
-        elif self.current_turn.actions_taken[-1].action_type == ActionType.MOVE and \
-                self.board.is_in_room(self.player.player_id):  # or moved by suggestion
+        if self.player.is_lastmove_suggested or (self.current_turn.is_last_action_move() and \
+                self.board.is_in_room(self.player.player_id)):  # or moved by suggestion
             available.append(ActionType.SUGGEST)
         available.append(ActionType.ACCUSE)
         if len(available) == 1 and available[0] == ActionType.ACCUSE:
             available.append(ActionType.END_TURN)
 
+        if not self.current_turn.actions_taken:
+            self.player.is_lastmove_suggested = False #reset is_lastmove_suggested if it is the first action to be taken
             # TODO: remove the SUGGEST option if we suggested in this room last turn,
         return available

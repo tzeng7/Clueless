@@ -91,14 +91,13 @@ class GameManager:
         cards = []
 
         # choose specific combination and distribute the rest
-        characters = list(Character)[0:len(self.players)]
 
-        self.winning_combination = (Card(CardType.CHARACTER, random.choice(characters).value),
+        self.winning_combination = (Card(CardType.CHARACTER, random.choice(list(Character)).value),
                                     Card(CardType.LOCATION, random.choice(list(Location)).value),
                                     Card(CardType.WEAPON, random.choice(list(Weapon)).value))
         cards.extend(
             [Card(CardType.CHARACTER, x.value)
-             for x in characters if not x.value == self.winning_combination[0].card_value])
+             for x in list(Character) if not x.value == self.winning_combination[0].card_value])
         cards.extend([Card(CardType.LOCATION, x.value)
                       for x in Location if not x.value == self.winning_combination[1].card_value])
         cards.extend([Card(CardType.WEAPON, x.value)
