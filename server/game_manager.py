@@ -21,9 +21,9 @@ class GameManager:
         self.players: list[ServerPlayer] = sorted(players, key=lambda x: x.player_id.character.value, reverse=True)
         unassigned_characters = list(Character)[len(self.players):]  # we mint PlayerIDs in order of join right now
 
-        self.dummy_players: list[PlayerID] = [PlayerID(nickname=character.name, character=character) for character in \
-                                              unassigned_characters]
-        self.board: Board = Board(players=[player.player_id for player in self.players] + self.dummy_players)
+        dummy_players: list[PlayerID] = [PlayerID(nickname=character.name, character=character) for character in \
+                                         unassigned_characters]
+        self.board: Board = Board(players=[player.player_id for player in self.players] + dummy_players)
         self.turn = -1
         self.winning_combination = None
 
