@@ -19,7 +19,11 @@ class GameManager:
         # Play order = by Character Enum order, which is also the order the players joined the lobby
         self.current_player = None
         self.players: list[ServerPlayer] = sorted(players, key=lambda x: x.player_id.character.value, reverse=True)
-        self.board: Board = Board(players=[player.player_id for player in self.players])
+        unassigned_characters = list(Character)[len(self.players):]  # we mint PlayerIDs in order of join right now
+
+        self.dummy_players: list[PlayerID] = [PlayerID(nickname=character.name, character=character) for character in \
+                                              unassigned_characters]
+        self.board: Board = Board(players=[player.player_id for player in self.players] + self.dummy_players)
         self.turn = -1
         self.winning_combination = None
 
@@ -62,8 +66,8 @@ class GameManager:
         next_player = self.players[(index + 1) % len(self.players)]
         request_disprove = RequestDisprove(suggest_action)
         self.SendToPlayerWithId(next_player.player_id, request_disprove)
-        #TODO: move weapon into location
-        #TODO: move suggested character
+        # TODO: move weapon into location
+        # TODO: move suggested character
 
     def disprove(self, disprove: Disprove):
         if not disprove.card:
@@ -80,6 +84,7 @@ class GameManager:
                 self.SendToPlayerWithId(next_player.player_id, request_disprove)
         else:
             self.SendToPlayerWithId(disprove.suggest.player_id, disprove)
+
     def accuse(self, accuser, character, weapon, location):
         # deactivate player if wrong; return boolean whether right or wrong
         if (character, weapon, location) == self.winning_combination:
@@ -97,7 +102,7 @@ class GameManager:
                                     Card(CardType.WEAPON, random.choice(list(Weapon)).value))
         cards.extend(
             [Card(CardType.CHARACTER, x.value)
-             for x in list(Character) if not x.value == self.winning_combination[0].card_value])
+             for x in Character if not x.value == self.winning_combination[0].card_value])
         cards.extend([Card(CardType.LOCATION, x.value)
                       for x in Location if not x.value == self.winning_combination[1].card_value])
         cards.extend([Card(CardType.WEAPON, x.value)
@@ -106,7 +111,6 @@ class GameManager:
         return cards
 
     ## disprove
-
 
     ################################
     #       NETWORKING HELPERS     #

@@ -66,14 +66,6 @@ class Board:
             self.grid[position[0]][position[1]].add(player_token)
         player_token.position = position
 
-    def move_in_direction(self, player_id, direction):
-        player_token = self.player_tokens[player_id]
-        try:
-            new_position = self.calculate_new_position(player_token.position, direction)
-            self.move(player_id, new_position)
-        except:
-            print("Error: Cannot move in direction")
-
     def get_movement_options(self, player_id) -> list[(Direction, (int, int))]:
         player_token = self.player_tokens[player_id]
         if not player_token.position:
