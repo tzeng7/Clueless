@@ -18,7 +18,7 @@ class GameManager:
     def __init__(self, players: [ServerPlayer]):
         # Play order = by Character Enum order, which is also the order the players joined the lobby
         self.current_player = None
-        self.players: list[ServerPlayer] = sorted(players, key=lambda x: x.player_id.character.value, reverse=True)
+        self.players: list[ServerPlayer] = sorted(players, key=lambda x: x.player_id.character.ordinal_value)
         unassigned_characters = list(Character)[len(self.players):]  # we mint PlayerIDs in order of join right now
 
         dummy_players: list[PlayerID] = [PlayerID(nickname=character.name, character=character) for character in \

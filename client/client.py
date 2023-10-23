@@ -38,7 +38,7 @@ class GameClient(ConnectionListener):
     #######################################
     def listen_for_ready(self):
         time.sleep(2)
-        print(input("Hit any key when ready!\n"))
+        print(input("Hit return when ready!\n"))
         print("READY!")
         self.Send(Ready())
 
@@ -71,6 +71,7 @@ class GameClient(ConnectionListener):
         move: Move = Move.deserialize(data)
 
         self.game_manager.board.move(move.player_id, move.position)
+        print(self.game_manager.board)
         # self.game_manager.board.move(move., move.position)
         if move.player_id == self.player.player_id:
             self.Send(self.game_manager.next_action())
@@ -80,6 +81,7 @@ class GameClient(ConnectionListener):
         suggest: Suggest = Suggest.deserialize(data)
 
         self.game_manager.handle_suggestion(suggest)
+        print(self.game_manager.board)
         # for player in self.game_manager.board.player_tokens:
         #     if suggest.suggestion[0] == player.character:
         #

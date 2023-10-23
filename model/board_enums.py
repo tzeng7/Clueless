@@ -62,6 +62,10 @@ class Character(Enum):
         }
         return char_to_position[self]
 
+    @property
+    def ordinal_value(self):
+        return list(Character).index(self)
+
 
 class Direction(Enum):
     INITIALIZE = 0

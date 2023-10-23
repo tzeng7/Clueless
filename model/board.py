@@ -1,5 +1,6 @@
 from model.board_enums import Location, Direction, Character
 from model.player import PlayerToken, PlayerID
+from typing import cast
 
 
 # abstract class with capacity
@@ -115,4 +116,37 @@ class Board:
 
     def get_player_position(self, player_id):
         return self.player_tokens[player_id].position
+
+    def __str__(self):
+        description = []
+        description.append("""
+                                0   1   2   3   4
+                              ┌───┐   ┌───┐   ┌───┐
+                            0 │STU├───┤HAL├───┤LOU│
+                              └─┬─┘   └─┬─┘   └─┬─┘
+                            1   │       │       │
+                              ┌─┴─┐   ┌─┴─┐   ┌─┴─┐
+                            2 │LIB├───┤BIL├───┤DIN│
+                              └─┬─┘   └─┬─┘   └─┬─┘
+                            3   │       │       │
+                              ┌─┴─┐   ┌─┴─┐   ┌─┴─┐
+                            4 │CON├───┤BAL├───┤KIT│
+                              └───┘   └───┘   └───┘
+                            """)
+        for player in sorted(self.player_tokens.values(), key=lambda x: x.player_id.character.ordinal_value):
+            if not player.position:
+                description.append(f"{player.character} not initialized.")
+            elif self.is_in_room(player.player_id):
+                description.append(f"{player.character} is in {cast(Room, self.get_player_space(player.player_id)).room_type}")
+            else:
+                player_position = player.position
+                if player_position[0] % 2 == 0:
+                    first_room = self.grid[player_position[0]][player_position[1]-1].room_type
+                    second_room = self.grid[player_position[0]][player_position[1]+1].room_type
+                else:
+                    first_room = self.grid[player_position[0]-1][player_position[1]].room_type
+                    second_room = self.grid[player_position[0]+1][player_position[1]].room_type
+                description.append(f"{player.character} is in the hallway between {first_room} and {second_room}.")
+
+        return "\n".join(description)
 
