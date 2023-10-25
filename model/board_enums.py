@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class Location(Enum):
     STUDY = "Study"
     HALL = "Hall"
@@ -10,6 +11,27 @@ class Location(Enum):
     CONSERVATORY = "Conservatory"
     BALLROOM = "Ballroom"
     KITCHEN = "Kitchen"
+
+    def get_position(self) -> (int, int):
+        match self:
+            case Location.STUDY:
+                return (0, 0)
+            case Location.HALL:
+                return (0, 2)
+            case Location.LOUNGE:
+                return (0, 4)
+            case Location.LIBRARY:
+                return (2, 0)
+            case Location.BILLIARD:
+                return (2, 2)
+            case Location.DINING:
+                return (2, 4)
+            case Location.CONSERVATORY:
+                return (4, 0)
+            case Location.BALLROOM:
+                return (4, 2)
+            case Location.KITCHEN:
+                return (4, 4)
 
 
 class Weapon(Enum):
@@ -40,15 +62,18 @@ class Character(Enum):
         }
         return char_to_position[self]
 
+    @property
+    def ordinal_value(self):
+        return list(Character).index(self)
+
 
 class Direction(Enum):
-    INITIALIZE = 0
+    # INITIALIZE = 0
     UP = 1
     DOWN = 2
     LEFT = 3
     RIGHT = 4
     SECRET_PASSAGEWAY = 5
-
 
 
 class CardType(Enum):
@@ -70,5 +95,3 @@ class ActionType(Enum):
                 return False
             case _:
                 return True
-
-

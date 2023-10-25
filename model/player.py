@@ -18,9 +18,6 @@ class PlayerID:
     def __repr__(self):
         return f"PlayerID(character={self.character.value}, nickname={self.nickname})"
 
-    def __eq__(self, other):
-        return self.character == other.character and self.nickname == other.nickname
-
 
 class PlayerIDWrapper:
     def __init__(self, player_id: PlayerID):
