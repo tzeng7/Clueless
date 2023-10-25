@@ -68,7 +68,7 @@ class Character(Enum):
 
 
 class Direction(Enum):
-    INITIALIZE = 0
+    # INITIALIZE = 0
     UP = 1
     DOWN = 2
     LEFT = 3

@@ -47,6 +47,11 @@ class Board:
             [Hallway(), Void(), Hallway(), Void(), Hallway()],
             [Room(Location.CONSERVATORY), Hallway(), Room(Location.BALLROOM), Hallway(), Room(Location.KITCHEN)]
         ]
+        for player in self.player_tokens:
+            starting_position = player.character.get_starting_position()
+            self.grid[starting_position[0]][starting_position[1]].add(self.player_tokens[player])
+            self.player_tokens[player].position = starting_position
+
 
     # def to_string(self):
     #     for x in range(len(self.grid)):
@@ -69,16 +74,17 @@ class Board:
 
     def get_movement_options(self, player_id) -> list[(Direction, (int, int))]:
         player_token = self.player_tokens[player_id]
-        if not player_token.position:
-            return [(Direction.INITIALIZE, player_id.character.get_starting_position())]
+        # if not player_token.position:
+        #     return [(Direction.INITIALIZE, player_id.character.get_starting_position())]
         valid_directions = []
-        for direction in [d for d in Direction if d.value > Direction.INITIALIZE.value]:
+        # for direction in [d for d in Direction if d.value > Direction.INITIALIZE.value]:
+        for direction in Direction:
             try:
                 new_position = self.__calculate_new_position(player_token.position, direction)
                 if self.grid[new_position[0]][new_position[1]].can_add():
                     valid_directions.append((direction, new_position))
             except ValueError:
-                print(f"Excluding {direction.name}")
+                print(f"Excluding {direction.name}") #what's going on here
         return valid_directions
 
     def __calculate_new_position(self, from_position, direction):
