@@ -1,12 +1,13 @@
 [tool.poetry]
 name = "clueless"
 version = "0.1.0"
-description = "Client/Server implementation of the game Clue"
-authors = ["Your Name <you@example.com>"]
+description = ""
+authors = ["tzeng7 <thebosstzeng@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
+PodSixNet = "^0.11.0"
 
 
 [build-system]
