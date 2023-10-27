@@ -18,6 +18,10 @@
 
 - Follow https://www.jetbrains.com/help/pycharm/poetry.html for poetry installation.
 
+- poetry config virtualenvs.in-project true
+
+- poetry install
+
 - go to interpreter settings: add local interpreter
   - select base interpreter (python 3.11)
   - poetry executable found in link above
