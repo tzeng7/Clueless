@@ -1,4 +1,4 @@
-from messages.messages import DealCards, YourTurn, BaseMessage, Suggest, Move, EndTurn, RequestDisprove, Disprove
+from messages.messages import DealCards, YourTurn, BaseMessage, Suggest, Move, EndTurn, RequestDisprove, Accuse, Disprove
 from model.board import Board
 from model.board_enums import Character, Location, Weapon, CardType
 import random
@@ -85,12 +85,18 @@ class GameManager:
         else:
             self.SendToPlayerWithId(disprove.suggest.player_id, disprove)
 
-    def accuse(self, accuser, character, weapon, location):
-        # deactivate player if wrong; return boolean whether right or wrong
+    def accuse(self, accuser, accuse_action: Accuse):
+        character, weapon, location = accuse_action.accusation
         if (character, weapon, location) == self.winning_combination:
-            return 'Game Over'
+            game_over_message = f"Game Over! {accuser.player_id.nickname} made the correct accusation."
+            accuse_action.is_correct = True
+            self.SendToPlayerWithId(accuser.player_id,accuse_action)
+            return game_over_message
         accuser.active = False
-        return accuser + 'inactive'
+        self.SendToPlayerWithId(accuser.player_id, accuse_action)
+        return f"{accuser.player_id.nickname} is inactive"
+
+        #self.SendToAll(f"{accuser.player_id.nickname} is inactive")
 
     def __create_cards(self):
         cards = []

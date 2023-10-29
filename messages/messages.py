@@ -109,6 +109,13 @@ class StartGame(BaseMessage):
         self.board = board
 
 
+class EndGame(BaseMessage):
+    name = "end_game"
+
+    def __init__(self):
+        super().__init__()
+
+
 class DealCards(BaseMessage):
     name = "deal_cards"
 
@@ -131,3 +138,13 @@ class RequestDisprove(BaseMessage):
     def __init__(self, suggest: Suggest):
         super().__init__()
         self.suggest = suggest
+
+
+# added accuse class
+
+class Accuse(BaseClientAction):
+    action_type = ActionType.ACCUSE
+    is_correct = False
+    def __init__(self, player_id: PlayerID, accusation: (Character, Weapon, Location)):
+        super().__init__(player_id)
+        self.accusation = accusation

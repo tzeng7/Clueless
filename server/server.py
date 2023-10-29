@@ -3,7 +3,7 @@ from PodSixNet.Server import Server
 import time
 
 from messages.messages import JoinGame, StartGame, UpdatePlayers, AssignPlayerID, BaseClientAction, BaseMessage, Move, \
-    Suggest, Disprove, EndTurn
+    Suggest, Disprove, EndTurn, Accuse
 from model.board_enums import Character
 from model.player import PlayerID
 from game_manager import GameManager
@@ -46,6 +46,11 @@ class ClientChannel(Channel):
         suggest_action = Suggest.deserialize(data)
         print(f"Received ClientAction_suggest from client channel {self}")
         self._server.suggest(self, suggest_action)
+
+    def Network_ClientAction_accuse(self, data):
+        accuse_action = Accuse.deserialize(data)
+        print(f"Received ClientAction_accuse from client channel {self}")
+        self._server.accuse(self, accuse_action)
 
     def Network_ClientAction_disprove(self, data):
         disprove_action = Disprove.deserialize(data)
@@ -115,6 +120,10 @@ class ClueServer(Server):
     def suggest(self, channel, suggest_action: Suggest):
         self.game_manager.suggest(suggest_action)
         # TODO: list out rules of when suggest can be called
+
+    def accuse(self, channel, accuse_action: Accuse):
+        player_accusing = self.player_queue[channel]
+        self.game_manager.accuse(player_accusing, accuse_action)
 
     def disprove(self, channel, disprove_action: Disprove):
         self.game_manager.disprove(disprove_action)
