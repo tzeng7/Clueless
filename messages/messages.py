@@ -35,6 +35,8 @@ class JoinGame(BaseMessage):
 class Ready(BaseMessage):
     name = "ready"
 
+class EndGame(BaseMessage):
+    name = "end_game"
 
 class BaseClientAction(BaseMessage):
     name = "ClientAction"
@@ -76,32 +78,6 @@ class Disprove(BaseClientAction):
         self.suggest = suggest
 
 
-class Accuse(BaseClientAction):
-    action_type = ActionType.ACCUSE
-
-    def __init__(self, player_id: PlayerID, accusation: (Character, Weapon, Location)):
-        super().__init__(player_id)
-        self.accusation = accusation
-
-
-class CorrectAccusation(BaseClientAction):
-    name = "correct_accusation"
-
-    def __init__(self, player_id: PlayerID, Character, Weapon, Location):
-        super().__init__()
-        self.player_id = player_id
-        self.accusation = Character, Weapon, Location
-
-
-class IncorrectAccusation(BaseClientAction):
-    name = "incorrect_accusation"
-
-    def __init__(self, player_id: PlayerID, accusation: (Character, Weapon, Location)):
-        super().__init__()
-        self.player_id = player_id
-        self.accusation = accusation
-
-
 class EndTurn(BaseClientAction):
     action_type = ActionType.END_TURN
 
@@ -135,6 +111,13 @@ class StartGame(BaseMessage):
         self.board = board
 
 
+class EndGame(BaseMessage):
+    name = "end_game"
+
+    def __init__(self):
+        super().__init__()
+
+
 class DealCards(BaseMessage):
     name = "deal_cards"
 
@@ -157,3 +140,13 @@ class RequestDisprove(BaseMessage):
     def __init__(self, suggest: Suggest):
         super().__init__()
         self.suggest = suggest
+
+
+# added accuse class
+
+class Accuse(BaseClientAction):
+    action_type = ActionType.ACCUSE
+    is_correct = False
+    def __init__(self, player_id: PlayerID, accusation: (Character, Weapon, Location)):
+        super().__init__(player_id)
+        self.accusation = accusation
