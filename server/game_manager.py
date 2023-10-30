@@ -1,4 +1,5 @@
-from messages.messages import DealCards, YourTurn, BaseMessage, Suggest, Move, EndTurn, RequestDisprove, Accuse, Disprove
+from messages.messages import DealCards, YourTurn, BaseMessage, Suggest, Move, EndTurn, RequestDisprove, Accuse, \
+    Disprove, EndGame
 from model.board import Board
 from model.board_enums import Character, Location, Weapon, CardType
 import random
@@ -40,7 +41,10 @@ class GameManager:
     def next_turn(self):
         self.turn += 1
         self.current_player = self.players[self.turn % len(self.players)]
-        self.current_player.Send(YourTurn(turn_id=self.turn))
+        if self.current_player.active:
+            self.current_player.Send(YourTurn(turn_id=self.turn))
+        else:
+            self.next_turn()
 
     def end_turn(self, end_action: EndTurn):
         self.SendToAll(end_action)
@@ -87,14 +91,16 @@ class GameManager:
 
     def accuse(self, accuser, accuse_action: Accuse):
         character, weapon, location = accuse_action.accusation
-        if (character, weapon, location) == self.winning_combination:
+        if (character.value, location.value, weapon.value) == (self.winning_combination[0].card_value, self.winning_combination[1].card_value, self.winning_combination[2].card_value):
             game_over_message = f"Game Over! {accuser.player_id.nickname} made the correct accusation."
             accuse_action.is_correct = True
             self.SendToPlayerWithId(accuser.player_id,accuse_action)
-            return game_over_message
-        accuser.active = False
-        self.SendToPlayerWithId(accuser.player_id, accuse_action)
-        return f"{accuser.player_id.nickname} is inactive"
+            self.SendToAll(EndGame())
+            print(game_over_message)
+        else:
+            accuser.active = False
+            self.SendToPlayerWithId(accuser.player_id, accuse_action)
+            print(f"{accuser.player_id.nickname} is inactive")
 
         #self.SendToAll(f"{accuser.player_id.nickname} is inactive")
 

@@ -98,6 +98,8 @@ class ClientGameManager:
 
             case _:
                 raise NotImplementedError("ActionType not yet implemented!")
+
+        #TODO: SEND TO ALL CLIENTS THAT GAME IS OVER
         self.current_turn.actions_taken.append(selected_action)
         return selected_action
 

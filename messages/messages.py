@@ -35,6 +35,8 @@ class JoinGame(BaseMessage):
 class Ready(BaseMessage):
     name = "ready"
 
+class EndGame(BaseMessage):
+    name = "end_game"
 
 class BaseClientAction(BaseMessage):
     name = "ClientAction"
