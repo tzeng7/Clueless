@@ -1,4 +1,5 @@
-from messages.messages import DealCards, YourTurn, BaseMessage, Suggest, Move, EndTurn, RequestDisprove, Disprove
+from messages.messages import DealCards, YourTurn, BaseMessage, Suggest, Move, EndTurn, RequestDisprove, Disprove, \
+    IncorrectAccusation, CorrectAccusation
 from model.board import Board
 from model.board_enums import Character, Location, Weapon, CardType
 import random
@@ -48,6 +49,7 @@ class GameManager:
 
     def move(self, player, move_action: Move):
         # TODO: Add error handling: throw when the move is invalid
+
         self.SendToAll(move_action)
 
     def find_index_player(self, player_id):
@@ -88,9 +90,16 @@ class GameManager:
     def accuse(self, accuser, character, weapon, location):
         # deactivate player if wrong; return boolean whether right or wrong
         if (character, weapon, location) == self.winning_combination:
-            return 'Game Over'
-        accuser.active = False
-        return accuser + 'inactive'
+            self.SendToAll(CorrectAccusation(accuser, character, weapon, location))
+        else:
+            accuser.active = False
+            self.SendToAll(IncorrectAccusation(accuser))
+
+        self.next_turn()
+        #    return 'Game Over'
+        #    return 'Game Over'
+        # accuser.active = False
+        # return accuser + 'inactive'
 
     def __create_cards(self):
         cards = []

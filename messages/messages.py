@@ -76,6 +76,32 @@ class Disprove(BaseClientAction):
         self.suggest = suggest
 
 
+class Accuse(BaseClientAction):
+    action_type = ActionType.ACCUSE
+
+    def __init__(self, player_id: PlayerID, accusation: (Character, Weapon, Location)):
+        super().__init__(player_id)
+        self.accusation = accusation
+
+
+class CorrectAccusation(BaseClientAction):
+    name = "correct_accusation"
+
+    def __init__(self, player_id: PlayerID, Character, Weapon, Location):
+        super().__init__()
+        self.player_id = player_id
+        self.accusation = Character, Weapon, Location
+
+
+class IncorrectAccusation(BaseClientAction):
+    name = "incorrect_accusation"
+
+    def __init__(self, player_id: PlayerID, accusation: (Character, Weapon, Location)):
+        super().__init__()
+        self.player_id = player_id
+        self.accusation = accusation
+
+
 class EndTurn(BaseClientAction):
     action_type = ActionType.END_TURN
 

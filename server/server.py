@@ -3,7 +3,7 @@ from PodSixNet.Server import Server
 import time
 
 from messages.messages import JoinGame, StartGame, UpdatePlayers, AssignPlayerID, BaseClientAction, BaseMessage, Move, \
-    Suggest, Disprove, EndTurn
+    Suggest, Disprove, EndTurn, Accuse
 from model.board_enums import Character
 from model.player import PlayerID
 from game_manager import GameManager
@@ -52,6 +52,11 @@ class ClientChannel(Channel):
         print(f"Received ClientAction_disprove from client channel {self}")
         self._server.disprove(self, disprove_action)
 
+    def Network_ClientAction_accuse(self, data):
+        accuse_action = Accuse.deserialize(data)
+        print(f"Received ClientAction_accuse from client channel {self}")
+        self._server.accuse(self, accuse_action)
+
     def Network_ClientAction_end_turn(self, data):
         end_turn_action = EndTurn.deserialize(data)
         print(f"Received ClientAction_end_turn from client channel {self}")
@@ -65,6 +70,8 @@ class ClueServer(Server):
         Server.__init__(self, localaddr=("127.0.0.1", 10000), listeners=6)
         self.player_queue: dict[ClientChannel, ServerPlayer] = {}
         self.game_manager: GameManager = None
+        self.min_players = 2
+        self.max_players = 6
         print('Server launched')
         print(f'Socket: {self.socket}')
 
@@ -78,12 +85,16 @@ class ClueServer(Server):
     ################################
 
     def add_player(self, channel, nickname):
-        print("New Player" + str(channel.addr))
-        minted_id = PlayerID(character=list(Character)[len(self.player_queue)], nickname=nickname)
-        self.player_queue[channel] = ServerPlayer(minted_id, channel=channel)
-        self.SendToChannel(channel, AssignPlayerID(player_id=minted_id))
-        self.send_players()
-        print("players in queue", [p for p in self.player_queue])
+        #  limit to 6 players
+        if len(self.player_queue) < self.max_players:
+            print("New Player" + str(channel.addr))
+            minted_id = PlayerID(character=list(Character)[len(self.player_queue)], nickname=nickname)
+            self.player_queue[channel] = ServerPlayer(minted_id, channel=channel)
+            self.SendToChannel(channel, AssignPlayerID(player_id=minted_id))
+            self.send_players()
+            print("players in queue", [p for p in self.player_queue])
+        else:
+            print("Game is full")
 
     def del_player(self, channel):
         print("Deleting Player" + str(channel.addr))
@@ -96,8 +107,10 @@ class ClueServer(Server):
     def set_ready_for_player(self, channel):
         (self.player_queue[channel]).ready = True
         print("READY")
-        if all(player.ready for player in self.player_queue.values()):
+        if all(player.ready for player in self.player_queue.values()) and len(self.player_queue) >= self.min_players:
             self.start_game()
+        else:
+            print("Waiting for more players")
 
     ################################
     #      GAME MANAGEMENT       #
@@ -118,6 +131,9 @@ class ClueServer(Server):
 
     def disprove(self, channel, disprove_action: Disprove):
         self.game_manager.disprove(disprove_action)
+
+    def accuse(self, channel, accuse_action: Accuse):
+        self.game_manager.accuse(accuse_action)
 
     def end_turn(self, end_turn_action: EndTurn):
         self.game_manager.end_turn(end_turn_action)
