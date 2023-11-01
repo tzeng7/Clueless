@@ -35,8 +35,10 @@ class JoinGame(BaseMessage):
 class Ready(BaseMessage):
     name = "ready"
 
+
 class EndGame(BaseMessage):
     name = "end_game"
+
 
 class BaseClientAction(BaseMessage):
     name = "ClientAction"
@@ -67,6 +69,15 @@ class Suggest(BaseClientAction):
     def __init__(self, player_id: PlayerID, suggestion: (Character, Weapon, Location)):
         super().__init__(player_id)
         self.suggestion = suggestion
+
+
+class WeaponMove(BaseMessage):
+    name = "weapon_move_update"
+
+    def __init__(self, weapon, new_room):
+        super().__init__()
+        self.weapon = weapon
+        self.new_room = new_room
 
 
 class Disprove(BaseClientAction):
@@ -147,6 +158,7 @@ class RequestDisprove(BaseMessage):
 class Accuse(BaseClientAction):
     action_type = ActionType.ACCUSE
     is_correct = False
+
     def __init__(self, player_id: PlayerID, accusation: (Character, Weapon, Location)):
         super().__init__(player_id)
         self.accusation = accusation

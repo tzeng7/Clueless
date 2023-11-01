@@ -57,11 +57,6 @@ class ClientChannel(Channel):
         print(f"Received ClientAction_disprove from client channel {self}")
         self._server.disprove(self, disprove_action)
 
-    def Network_ClientAction_accuse(self, data):
-        accuse_action = Accuse.deserialize(data)
-        print(f"Received ClientAction_accuse from client channel {self}")
-        self._server.accuse(self, accuse_action)
-
     def Network_ClientAction_end_turn(self, data):
         end_turn_action = EndTurn.deserialize(data)
         print(f"Received ClientAction_end_turn from client channel {self}")
@@ -140,9 +135,6 @@ class ClueServer(Server):
 
     def disprove(self, channel, disprove_action: Disprove):
         self.game_manager.disprove(disprove_action)
-
-    def accuse(self, channel, accuse_action: Accuse):
-        self.game_manager.accuse(accuse_action)
 
     def end_turn(self, end_turn_action: EndTurn):
         self.game_manager.end_turn(end_turn_action)

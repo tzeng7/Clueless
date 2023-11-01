@@ -105,6 +105,11 @@ class GameClient(ConnectionListener):
         request_disprove = RequestDisprove.deserialize(data)
         self.Send(self.game_manager.disprove(request_disprove.suggest))
 
+    def Network_WeaponMove(self, data):
+        print("*** Received move weapon")
+        self.game_manager.board.move_weapon(data.weapon, data.new_room)
+        self.game_manager.board.print_weapon_locations()
+
     def Network_ClientAction_accuse(self, data):
         accuse: Accuse = Accuse.deserialize(data)
         '''if accuse.is_correct:

@@ -1,6 +1,7 @@
-from model.board_enums import Location, Direction, Character
+from model.board_enums import Location, Direction, Character, Weapon
 from model.player import PlayerToken, PlayerID
 from typing import cast
+import random
 
 
 # abstract class with capacity
@@ -23,6 +24,7 @@ class Room(Space):
     def __init__(self, room_type: Location):
         super().__init__(6)
         self.room_type = room_type
+        self.weapon = None
 
 
 class Hallway(Space):
@@ -52,6 +54,14 @@ class Board:
             self.grid[starting_position[0]][starting_position[1]].add(self.player_tokens[player])
             self.player_tokens[player].position = starting_position
 
+        # add weapons to rooms
+        weapons_to_distribution = list(Weapon)
+        all_rooms = [space for row in self.grid for space in row if isinstance(space, Room)]
+        rooms_for_weapons = random.sample(all_rooms, len(weapons_to_distribution))
+
+        for room in rooms_for_weapons:
+            room.weapon = weapons_to_distribution.pop()
+
 
     # def to_string(self):
     #     for x in range(len(self.grid)):
@@ -61,6 +71,10 @@ class Board:
 
     def move(self, player_id, position):
         player_token = self.player_tokens[player_id]
+
+        if isinstance(position, Location):
+            position = position.get_position()
+
         if not self.grid[position[0]][position[1]].can_add():
             print("Error: Cannot add player to space")
             return
@@ -155,4 +169,33 @@ class Board:
                 description.append(f"{player.character} is in the hallway between {first_room} and {second_room}.")
 
         return "\n".join(description)
+
+        # weapon methods
+
+    def find_weapon_room(self, weapon: Weapon):
+        for row in self.grid:
+            for space in row:
+                if isinstance(space, Room) and space.weapon == weapon:
+                    return space
+        return None
+
+    def move_weapon(self, weapon: Weapon, room: Room):
+        current_room = self.find_weapon_room(weapon)
+        if current_room is not None:
+            current_room.weapon = None
+
+        for row in self.grid:
+            for space in row:
+                if isinstance(space, Room) and space.room_type == room:
+                    print(f"Adding {weapon} to {room}")
+                    space.weapon = weapon
+                    return
+
+    def print_weapon_locations(self):
+        print("Current weapon locations:")
+        for row in self.grid:
+            for space in row:
+                if isinstance(space, Room):
+                    print(f"{space.weapon} is in the {space.room_type}")
+
 

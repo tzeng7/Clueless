@@ -47,10 +47,16 @@ class ClientGameManager:
         actions = self.__available_actions()
         for index, action in enumerate(actions):
             print(f"{index + 1}.  {action.value}")
-        choice = int(input("Choice: "))
-        while not choice or choice <= 0 or choice > len(actions):
-            print("Invalid input!")
-            choice = int(input("Choice: "))
+
+        valid = False  # checking valid input
+        while not valid:
+            try:
+                choice = int(input("Choice: "))
+                if choice > len(actions) or choice < 1:
+                    raise ValueError
+                valid = True
+            except ValueError:
+                print("Invalid input!")
 
         match actions[choice - 1]:
             case ActionType.MOVE:
@@ -58,13 +64,25 @@ class ClientGameManager:
                 # TODO: WHAT IF THERE ARE NO DIRECTIONS YOU CAN MOVE
                 # print out which room has what per row of grid // string wrapper for board
                 possible_directions = self.board.get_movement_options(self.player.player_id)
-                for idx, possible_choice in enumerate(possible_directions):
-                    print(f"{idx + 1}. {possible_choice[0].name}")
-                choice = int(input("Choose direction: "))
-                selected_action = Move(
-                    player_id=self.player.player_id,
-                    position=possible_directions[choice - 1][1]
-                )
+                if len(possible_directions) == 0:
+                    print("You cannot move!")
+                    selected_action = EndTurn(player_id=self.player.player_id)
+                else:
+                    for idx, possible_choice in enumerate(possible_directions):
+                        print(f"{idx + 1}. {possible_choice[0].name}")
+                    valid = False  # checking valid input
+                    while not valid:
+                        try:
+                            choice = int(input("Choose direction: "))
+                            if choice > len(possible_directions) or choice < 1:
+                                raise ValueError
+                            valid = True
+                        except ValueError:
+                            print("Invalid input!")
+                    selected_action = Move(
+                        player_id=self.player.player_id,
+                        position=possible_directions[choice - 1][1]
+                    )
 
             case ActionType.SUGGEST:
                 print([character.value for character in list(Character)])

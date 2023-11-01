@@ -1,5 +1,5 @@
 from messages.messages import DealCards, YourTurn, BaseMessage, Suggest, Move, EndTurn, RequestDisprove, Accuse, \
-    Disprove, EndGame
+    Disprove, EndGame, WeaponMove
 from model.board import Board
 from model.board_enums import Character, Location, Weapon, CardType
 import random
@@ -38,6 +38,11 @@ class GameManager:
             player.Send(DealCards(cards=player.cards))
         self.next_turn()
 
+    def print_player_locations(self):
+        print("Server: Current player locations:")
+        for player_id, player_token in self.board.player_tokens.items():
+            print(f"    {player_id.character}: {player_token.position}")
+
     def next_turn(self):
         self.turn += 1
         self.current_player = self.players[self.turn % len(self.players)]
@@ -65,11 +70,32 @@ class GameManager:
         # move accused to accuser's location
         self.SendToAll(suggest_action)
 
+        # move suggested character
+        suggested_character, suggested_weapon, suggestion_room = suggest_action.suggestion
+
+        for player_id, player_token in self.board.player_tokens.items():
+            if player_id.character == suggested_character:
+                print(f'Server: Moving {suggested_character} to {suggestion_room} due to suggestion.')
+                player_token.position = suggestion_room.get_position()
+                move_action = Move(player_id, suggestion_room)
+                self.SendToAll(move_action)
+                break
+
+        # move weapon into location
+        self.board.move_weapon(suggested_weapon, suggestion_room)
+        weapon_move = WeaponMove(weapon=suggested_weapon, new_room=suggestion_room)
+        print(f"Server: moving {suggested_weapon} to {suggestion_room}.")
+        self.SendToAll(weapon_move)
+
+        self.board.print_weapon_locations()
+
         print("up to here")
         index = self.find_index_player(suggest_action.player_id)
         next_player = self.players[(index + 1) % len(self.players)]
         request_disprove = RequestDisprove(suggest_action)
         self.SendToPlayerWithId(next_player.player_id, request_disprove)
+
+        self.print_player_locations()
         # TODO: move weapon into location
         # TODO: move suggested character
 
