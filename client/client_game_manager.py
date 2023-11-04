@@ -1,7 +1,7 @@
 from typing import cast
 
 from client_player import ClientPlayer
-from messages.messages import BaseClientAction, Move, Suggest, Disprove, EndTurn
+from messages.messages import BaseClientAction, Move, Suggest, Disprove, EndTurn, Accuse, EndGame
 from model.board import Board, Room
 from model.board_enums import ActionType, Direction, Character, Weapon, Location
 
@@ -82,12 +82,24 @@ class ClientGameManager:
                                           suggestion=(
                                               list(Character)[c], list(Weapon)[w], location))
             case ActionType.ACCUSE:
-                selected_action = EndTurn(player_id=self.player.player_id)
+                print("Make an accusation.")
+                print([character.value for character in list(Character)])
+                print([weapon.value for weapon in Weapon])
+                print([location.value for location in list(Location)])
+                character = int(input("Select character: "))
+                weapon = int(input("Select weapon: "))
+                location = int(input("Select location: "))
+                selected_action = Accuse(
+                    player_id=self.player.player_id,
+                    accusation=(list(Character)[character], list(Weapon)[weapon], list(Location)[location])
+                )
             case ActionType.END_TURN:
                 selected_action = EndTurn(player_id=self.player.player_id)
 
             case _:
                 raise NotImplementedError("ActionType not yet implemented!")
+
+        #TODO: SEND TO ALL CLIENTS THAT GAME IS OVER
         self.current_turn.actions_taken.append(selected_action)
         return selected_action
 
@@ -99,6 +111,23 @@ class ClientGameManager:
             if suggested_player_id == self.player.player_id:
                 self.player.is_lastmove_suggested = True
                 print(f"Moved current player by suggestion: {self.player.is_lastmove_suggested}")
+
+
+    def handle_accusation_response(self, accuse: Accuse):
+
+        if accuse.is_correct:
+            print("Congratulations! Your accusation was correct. You win!")
+            selected_action = EndGame()
+        else:
+            print("Sorry, your accusation was incorrect. You are eliminated from the game.")
+            self.player.active = False
+            selected_action = EndTurn(player_id=self.player.player_id)
+
+        return selected_action
+
+
+
+
 
     def __available_actions(self):
 

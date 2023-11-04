@@ -5,7 +5,7 @@ from threading import Thread
 from client_game_manager import ClientGameManager
 from client_player import ClientPlayer
 from messages.messages import JoinGame, Ready, UpdatePlayers, AssignPlayerID, DealCards, YourTurn, RequestDisprove, \
-    Disprove, BaseMessage, StartGame, Move, Suggest
+    Disprove, BaseMessage, StartGame, Move, Suggest, Accuse, EndTurn
 
 
 class GameClient(ConnectionListener):
@@ -104,6 +104,17 @@ class GameClient(ConnectionListener):
     def Network_request_disprove(self, data):
         request_disprove = RequestDisprove.deserialize(data)
         self.Send(self.game_manager.disprove(request_disprove.suggest))
+
+    def Network_ClientAction_accuse(self, data):
+        accuse: Accuse = Accuse.deserialize(data)
+        '''if accuse.is_correct:
+            print("Congratulations! Your accusation was correct. You win!")
+
+        print("Sorry, your accusation was incorrect. You are eliminated from the game.")
+        self.player.active = False'''
+        self.Send(self.game_manager.handle_accusation_response(accuse))
+        # EndTurn(self.player.player_id)
+
 
     def Network_deal_cards(self, data):
         deal_cards: DealCards = DealCards.deserialize(data)
