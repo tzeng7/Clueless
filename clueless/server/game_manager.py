@@ -1,11 +1,11 @@
-from messages.messages import DealCards, YourTurn, BaseMessage, Suggest, Move, EndTurn, RequestDisprove, Accuse, \
+from clueless.messages.messages import DealCards, YourTurn, BaseMessage, Suggest, Move, EndTurn, RequestDisprove, Accuse, \
     Disprove, EndGame
-from model.board import Board
-from model.board_enums import Character, Location, Weapon, CardType
+from clueless.model.board import Board
+from clueless.model.board_enums import Character, Location, Weapon, CardType
 import random
 
-from model.card import Card
-from model.player import PlayerID
+from clueless.model.card import Card
+from clueless.model.player import PlayerID
 from server_player import ServerPlayer
 
 

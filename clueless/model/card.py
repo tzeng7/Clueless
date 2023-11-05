@@ -1,4 +1,4 @@
-from model.board_enums import CardType, Weapon, Location, Character
+from clueless.model.board_enums import CardType, Weapon, Location, Character
 
 
 class Card:

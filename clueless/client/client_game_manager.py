@@ -1,9 +1,9 @@
 from typing import cast
 
 from client_player import ClientPlayer
-from messages.messages import BaseClientAction, Move, Suggest, Disprove, EndTurn, Accuse, EndGame
-from model.board import Board, Room
-from model.board_enums import ActionType, Direction, Character, Weapon, Location
+from clueless.messages.messages import BaseClientAction, Move, Suggest, Disprove, EndTurn, Accuse, EndGame
+from clueless.model.board import Board, Room
+from clueless.model.board_enums import ActionType, Direction, Character, Weapon, Location
 
 
 class Turn:

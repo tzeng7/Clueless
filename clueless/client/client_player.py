@@ -1,4 +1,4 @@
-from model.player import PlayerIDWrapper, PlayerID
+from clueless.model.player import PlayerIDWrapper, PlayerID
 
 
 class ClientPlayer(PlayerIDWrapper):

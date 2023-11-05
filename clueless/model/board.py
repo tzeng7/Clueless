@@ -1,5 +1,5 @@
-from model.board_enums import Location, Direction, Character
-from model.player import PlayerToken, PlayerID
+from clueless.model.board_enums import Location, Direction, Character
+from clueless.model.player import PlayerToken, PlayerID
 from typing import cast
 
 

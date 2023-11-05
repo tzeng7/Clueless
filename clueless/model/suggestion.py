@@ -1,4 +1,4 @@
-from model.board_enums import Character, Weapon, Location
+from clueless.model.board_enums import Character, Weapon, Location
 
 
 class Suggestion:

@@ -2,10 +2,10 @@ import pickle
 import uuid
 from typing import Self
 
-from model.board import Board
-from model.board_enums import Direction, ActionType, Character, Weapon, Location
-from model.card import Card
-from model.player import PlayerID
+from clueless.model.board import Board
+from clueless.model.board_enums import Direction, ActionType, Character, Weapon, Location
+from clueless.model.card import Card
+from clueless.model.player import PlayerID
 
 
 class BaseMessage:

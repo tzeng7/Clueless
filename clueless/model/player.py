@@ -1,4 +1,4 @@
-from model.board_enums import Character
+from clueless.model.board_enums import Character
 
 
 class PlayerID:

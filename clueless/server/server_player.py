@@ -1,7 +1,7 @@
 from PodSixNet.Channel import Channel
 
-from messages.messages import BaseMessage
-from model.player import PlayerID, PlayerIDWrapper
+from clueless.messages.messages import BaseMessage
+from clueless.model.player import PlayerID, PlayerIDWrapper
 
 
 class ServerPlayer(PlayerIDWrapper):
