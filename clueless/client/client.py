@@ -1,9 +1,11 @@
+import pygame
 from PodSixNet.Connection import ConnectionListener, connection
 import time
 from threading import Thread
 
 from client_game_manager import ClientGameManager
 from client_player import ClientPlayer
+from clueless.client.client_view_manager import ClientViewManager
 from clueless.messages.messages import JoinGame, Ready, UpdatePlayers, AssignPlayerID, DealCards, YourTurn, RequestDisprove, \
     Disprove, BaseMessage, StartGame, Move, Suggest, Accuse, EndTurn
 
@@ -18,17 +20,19 @@ class GameClient(ConnectionListener):
         # get a nickname from the user before starting
         nickname = input("Enter your nickname: ")
         self.Send(JoinGame(nickname=nickname))
-
+        self.view_manager = ClientViewManager()
+        self.game_clock = pygame.time.Clock()
         # listen for ready on a separate thread, in order to not block the thread,
         # which will prevent the client from receiving updates about other players joining.
-        self.ready_thread = Thread(target=self.listen_for_ready)
-        self.ready_thread.start()
+        # self.ready_thread = Thread(target=self.listen_for_ready)
+        # self.ready_thread.start()
 
     def update(self):
         connection.Pump()
         self.Pump()
-
-        time.sleep(0.001)
+        self.game_clock.tick(60)
+        self.view_manager.process_input()
+        pygame.display.update()
 
     def Send(self, data: BaseMessage):
         connection.Send(data.serialize())

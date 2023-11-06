@@ -47,10 +47,6 @@ class BaseClientAction(BaseMessage):
         if hasattr(self, "action_type") and self.action_type:
             self.name = f"ClientAction_{self.action_type.value}"
 
-        @staticmethod
-        def name_for_action(action_type: ActionType):
-            return f"ClientAction_{action_type.value}"
-
 
 class Move(BaseClientAction):
     action_type = ActionType.MOVE
