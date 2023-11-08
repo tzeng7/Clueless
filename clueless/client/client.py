@@ -1,145 +1,56 @@
 import pygame
-from PodSixNet.Connection import ConnectionListener, connection
-import time
-from threading import Thread
 
-from client_game_manager import ClientGameManager
-from client_player import ClientPlayer
-from clueless.client.client_view_manager import ClientViewManager
-from clueless.messages.messages import JoinGame, Ready, UpdatePlayers, AssignPlayerID, DealCards, YourTurn, RequestDisprove, \
-    Disprove, BaseMessage, StartGame, Move, Suggest, Accuse, EndTurn
+from clueless.client.connection import GameConnection
+from clueless.client.view import TitleView, View
 
 
-class GameClient(ConnectionListener):
-    def __init__(self, host, port):
-        self.player: ClientPlayer = None
-        self.game_manager: ClientGameManager = None
-        self.Connect((host, port))
-        print("Player client started")
-        print("Ctrl-C to exit")
-        # get a nickname from the user before starting
-        nickname = input("Enter your nickname: ")
-        self.Send(JoinGame(nickname=nickname))
-        self.view_manager = ClientViewManager()
+class GameClient(TitleView.Delegate):
+    def __init__(self):
+        pygame.init()
+        width, height = 500, 500
+        screen = pygame.display.set_mode((width, height))
+        screen.fill('white')
+        pygame.display.set_caption("Clueless")
         self.game_clock = pygame.time.Clock()
-        # listen for ready on a separate thread, in order to not block the thread,
-        # which will prevent the client from receiving updates about other players joining.
-        # self.ready_thread = Thread(target=self.listen_for_ready)
-        # self.ready_thread.start()
+        self.view = TitleView(screen, delegate=self)
+        # self.connection = GameConnection("127.0.0.1", int(10000))
 
     def update(self):
-        connection.Pump()
-        self.Pump()
         self.game_clock.tick(60)
-        self.view_manager.process_input()
+        # self.connection.update()
+        self.process_input()
+        self.view.draw()
         pygame.display.update()
 
-    def Send(self, data: BaseMessage):
-        connection.Send(data.serialize())
+    def transition(self, new_view: View):
+        self.view = new_view
 
-    #######################################
-    ### Keyboard I/O callbacks          ###
-    #######################################
-    def listen_for_ready(self):
-        time.sleep(2)
-        print(input("Hit return when ready!\n"))
-        print("READY!")
-        self.Send(Ready())
+    def process_input(self):
+        mouse_pos = pygame.mouse.get_pos()
+        self.view.respond_to_mouse_hover(mouse_pos)
+        for event in pygame.event.get():
+            # quit if the quit button was pressed
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                self.view.respond_to_mouse_down(pygame.mouse.get_pos())
+            if event.type == pygame.QUIT:
+                exit()
 
-    #######################################
-    ### Network event/message callbacks ###
-    #######################################
+    # TitleView.Delegate
+    def did_set_nickname(self):
+        if type(self.view) is not TitleView:
+            print("Error: received ready but no longer showing title view")
+        print("READY FROM DELEGATE!")
 
-    def Network_assign_player_id(self, data):
-        player_id = AssignPlayerID.deserialize(data).player_id
-        print(f"*** you are: {player_id}")
-        self.player = ClientPlayer(player_id=player_id)
+    def did_ready(self):
+        if type(self.view) is not TitleView:
+            print("Error: received ready but no longer showing title view")
+        print("READY FROM DELEGATE!")
+        # self.connection.join_game("Leslie")
+        # self.connection.ready()
 
-    def Network_update_players(self, data):
-        update_players: UpdatePlayers = UpdatePlayers.deserialize(data)
-        print(f"*** players: {[p for p in update_players.players]}")
-
-    def Network_start_game(self, data):
-        print("*** Game Started!")
-        board = StartGame.deserialize(data).board
-        self.game_manager = ClientGameManager(player=self.player, board=board)
-
-    def Network_start_turn(self, data):
-        print("*** Turn start!")
-        turn_id = YourTurn.deserialize(data).turn_id
-        self.game_manager.start_turn(turn_id=turn_id)  # managing turn history
-        self.Send(self.game_manager.next_action())
-
-    def Network_ClientAction_move(self, data):
-        print("*** Received move!")
-        move: Move = Move.deserialize(data)
-
-        self.game_manager.board.move(move.player_id, move.position)
-        print(self.game_manager.board)
-        # self.game_manager.board.move(move., move.position)
-        if move.player_id == self.player.player_id:
-            self.Send(self.game_manager.next_action())
-
-    def Network_ClientAction_suggest(self, data):
-        print("*** Received suggestion")
-        suggest: Suggest = Suggest.deserialize(data)
-
-        self.game_manager.handle_suggestion(suggest)
-        print(self.game_manager.board)
-        # for player in self.game_manager.board.player_tokens:
-        #     if suggest.suggestion[0] == player.character:
-        #
-        #         self.game_manager.board.move(player, suggest.suggestion[2].get_position())
-        #         print("Moved suggested player.")
-
-
-        # if suggest.player_id == self.player.player_id:
-        #     self.Send(self.game_manager.next_action())
-        # self.Send(self.game_manager.next_action())
-
-    def Network_ClientAction_disprove(self, data):
-        disprove: Disprove = Disprove.deserialize(data)
-        if not disprove.card:
-            print(f"*** No one can disprove suggestion")
-        else:
-            print(f"*** Received disprove {disprove.card}")
-        self.Send(self.game_manager.next_action())
-
-    def Network_request_disprove(self, data):
-        request_disprove = RequestDisprove.deserialize(data)
-        self.Send(self.game_manager.disprove(request_disprove.suggest))
-
-    def Network_ClientAction_accuse(self, data):
-        accuse: Accuse = Accuse.deserialize(data)
-        '''if accuse.is_correct:
-            print("Congratulations! Your accusation was correct. You win!")
-
-        print("Sorry, your accusation was incorrect. You are eliminated from the game.")
-        self.player.active = False'''
-        self.Send(self.game_manager.handle_accusation_response(accuse))
-        # EndTurn(self.player.player_id)
-
-
-    def Network_deal_cards(self, data):
-        deal_cards: DealCards = DealCards.deserialize(data)
-        self.player.cards.append(deal_cards.cards)
-        print(f"*** Received cards: {self.player.cards}")
-
-    # built in stuff
-
-    def Network_connected(self, data):
-        print("*** You are now connected to the server")
-
-    def Network_error(self, data):
-        print('error:', data['error'][1])
-        connection.Close()
-
-    def Network_disconnected(self, data):
-        print('Server disconnected')
-        exit()
 
 
 if __name__ == '__main__':
-    c = GameClient("127.0.0.1", int(10000))
+    c = GameClient()
     while 1:
         c.update()
