@@ -1,7 +1,8 @@
 from typing import Callable, Self, Protocol
 
+import pygame_gui
 import pygame
-from pygame import Surface, SurfaceType, Color, Rect
+from pygame import Surface, SurfaceType, Color
 
 
 class View(Protocol):
@@ -32,7 +33,7 @@ class View(Protocol):
         self.elements: list[View.Element] = []
 
     def draw(self):
-        self.screen.fill(Color("white"))
+        # self.screen.fill(Color("white"))
         for element in self.elements:
             self.screen.blit(element.surface, element.rectangle)
 
@@ -56,6 +57,11 @@ class View(Protocol):
             if element.rectangle.collidepoint(pos[0], pos[1]):
                 element.respond_to_mouse_down()
 
+    def respond_to_text_input(self, ui_object_id: str, text: str):
+        pass
+
+    def respond_to_button_press(self, ui_object_id: str):
+        pass
 
 class TextElement(View.Element):
 
@@ -95,31 +101,45 @@ class TitleView(View):
     DEFAULT_COLOR = Color(255, 0, 0)
 
     class Delegate(Protocol):
-        def did_set_nickname(self):
+        def did_set_nickname(self, nickname: str):
             pass
 
         def did_ready(self):
             pass
 
-    def __init__(self, screen: Surface | SurfaceType, delegate: Delegate):
-        super().__init__(screen=screen)
+    def __init__(self, screen, manager, delegate: Delegate):
+        super().__init__(screen)
+        self.delegate = delegate
+        pos = pygame.Rect((0, 0), (200, 30))
+        pos.center = (screen.get_rect().width // 2, screen.get_rect().height // 2)
+        self.ready_button = pygame_gui.elements.UIButton(relative_rect=pos,
+                                                         text='READY',
+                                                         manager=manager,
+                                                         visible=False)
+        self.text_input = pygame_gui.elements.UITextEntryLine(relative_rect=pos, manager=manager, placeholder_text="Enter nickname")
+
         self.title_text = TextElement(text="CLUELESS v 0.1.0", primary_color=Color(0, 0, 255))
         self.title_text.rectangle.center = (screen.get_rect().width // 2, screen.get_rect().height // 3)
         self.elements.append(self.title_text)
+        # self.subtitle_text = TextElement(text="READY",
+        #                                  size=24,
+        #                                  primary_color=Color(255, 0, 0),
+        #                                  highlight_color=Color(255, 153, 153),
+        #                                  on_mouse_down=delegate.did_ready)
+        # self.subtitle_text.rectangle.center = (
+        #     screen.get_rect().width // 2, self.title_text.rectangle.bottom + (self.subtitle_text.rectangle.height // 2)
+        # )
+        # self.elements.append(self.subtitle_text)
+        # player_list = TextElement(text="Currently in the lobby: a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z", size=20, primary_color=Color(0, 0, 255))
+        # player_list.rectangle.bottom = screen.get_rect().bottom
+        # self.elements.append(player_list)
 
-        self.subtitle_text = TextElement(text="READY",
-                                         size=24,
-                                         primary_color=Color(255, 0, 0),
-                                         highlight_color=Color(255, 153, 153),
-                                         on_mouse_down=delegate.did_ready)
-        self.subtitle_text.rectangle.center = (
-            screen.get_rect().width // 2, self.title_text.rectangle.bottom + (self.subtitle_text.rectangle.height // 2)
-        )
-        self.elements.append(self.subtitle_text)
-        player_list = TextElement(text="Currently in the lobby: a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z", size=20, primary_color=Color(0, 0, 255))
-        player_list.rectangle.bottom = screen.get_rect().bottom
-        self.elements.append(player_list)
+    def respond_to_text_input(self, ui_object_id: str, text: str):
+        self.text_input.hide()
+        self.ready_button.show()
+        self.delegate.did_set_nickname(nickname=text)
+        print(f"User hit enter: {text}")
 
-
-    def update_current_players(self, players: list[str]):
-        pass
+    def respond_to_button_press(self, ui_object_id: str):
+        print(f"User hit ready")
+        self.delegate.did_ready()
