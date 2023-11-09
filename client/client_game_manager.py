@@ -1,6 +1,6 @@
 from typing import cast
 
-from client_player import ClientPlayer
+from client.client_player import ClientPlayer
 from messages.messages import BaseClientAction, Move, Suggest, Disprove, EndTurn, Accuse, EndGame
 from model.board import Board, Room
 from model.board_enums import ActionType, Direction, Character, Weapon, Location

@@ -6,8 +6,8 @@ from messages.messages import JoinGame, StartGame, UpdatePlayers, AssignPlayerID
     Suggest, Disprove, EndTurn, Accuse
 from model.board_enums import Character
 from model.player import PlayerID
-from game_manager import GameManager
-from server_player import ServerPlayer
+from server.game_manager import GameManager
+from server.server_player import ServerPlayer
 
 
 class ClientChannel(Channel):

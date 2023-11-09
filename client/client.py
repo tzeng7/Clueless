@@ -2,8 +2,8 @@ from PodSixNet.Connection import ConnectionListener, connection
 import time
 from threading import Thread
 
-from client_game_manager import ClientGameManager
-from client_player import ClientPlayer
+from client.client_game_manager import ClientGameManager
+from client.client_player import ClientPlayer
 from messages.messages import JoinGame, Ready, UpdatePlayers, AssignPlayerID, DealCards, YourTurn, RequestDisprove, \
     Disprove, BaseMessage, StartGame, Move, Suggest, Accuse, EndTurn
 

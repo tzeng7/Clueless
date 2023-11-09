@@ -6,7 +6,7 @@ import random
 
 from model.card import Card
 from model.player import PlayerID
-from server_player import ServerPlayer
+from server.server_player import ServerPlayer
 
 
 # future features:
