@@ -8,7 +8,7 @@ from clueless.client.view import TitleView, View
 class GameClient(TitleView.Delegate):
     def __init__(self):
         pygame.init()
-        width, height = 500, 500
+        width, height = 1000, 1000
         self.screen = pygame.display.set_mode((width, height))
         self.screen.fill('white')
         pygame.display.set_caption("Clueless")
@@ -22,7 +22,6 @@ class GameClient(TitleView.Delegate):
         self.manager.update(self.game_clock.tick(30))
         self.connection.update()
         self.process_input()
-        self.manager.draw_ui(self.screen)
         self.view.draw()
         pygame.display.update()
 
@@ -30,25 +29,20 @@ class GameClient(TitleView.Delegate):
         self.view = new_view
 
     def process_input(self):
-        mouse_pos = pygame.mouse.get_pos()
-        self.view.respond_to_mouse_hover(mouse_pos)
         for event in pygame.event.get():
             # quit if the quit button was pressed
             self.manager.process_events(event)
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                self.view.respond_to_mouse_down(pygame.mouse.get_pos())
-            if event.type == pygame_gui.UI_TEXT_ENTRY_FINISHED:
-                self.view.respond_to_text_input(event.ui_object_id, event.text)
-            if event.type == pygame_gui.UI_BUTTON_PRESSED:
-                self.view.respond_to_button_press(event.ui_object_id)
             if event.type == pygame.QUIT:
                 exit()
+            else:
+                self.view.respond_to_event(event)
 
     # TitleView.Delegate
     def did_set_nickname(self, nickname: str):
         if type(self.view) is not TitleView:
             print("Error: received ready but no longer showing title view")
         self.connection.join_game(nickname=nickname)
+        self.view.transition_to_ready_button()
 
     def did_ready(self):
         if type(self.view) is not TitleView:
