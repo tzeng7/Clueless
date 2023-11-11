@@ -1,3 +1,5 @@
+from enum import Enum
+
 from pygame import Color
 
 from clueless.model.board_enums import Character
@@ -7,6 +9,10 @@ def rgb_from_hex(h: str):
     h = h.lstrip("#")
     return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
 
+class HorizontalAlignment(Enum):
+    CENTER = 1,
+    LEFT = 2
+    RIGHT = 3
 
 class Pico:
     BLACK = Color(rgb_from_hex("#000000"))

@@ -4,9 +4,11 @@ import pygame_gui
 import pygame
 from pygame import Surface, SurfaceType, Color
 
-from clueless.client.palette import Pico
+import clueless.client.ui_enums
+from clueless.client.ui_enums import Pico
 from clueless.client.ui_elements import Element, TextInputElement, TextElement, ManagedButton, ManagedElement, \
-    ImageElement
+    ImageElement, HorizontalStack, VerticalStack
+from clueless.model.board_enums import Character
 from clueless.model.player import PlayerID
 
 
@@ -19,8 +21,8 @@ class View(Protocol):
 
     def draw(self):
         self.ui_manager.draw_ui(self.screen)
-        for element in [e for e in self.elements if not e.is_ui_manager_managed]:
-            self.screen.blit(element.wrapped, element.rectangle)
+        for element in self.elements:
+            element.draw_onto(self.screen)
 
     def add_element(self, element: Element):
         self.elements.append(element)
@@ -113,9 +115,21 @@ class TitleView(View):
         #                         primary_color=Pico.from_character(player_id.character))
         # player_id.rectangle.topleft = (1000 - player_id.rectangle.width, 1000 - player_id.rectangle.height)
         # self.add_element(player_id)
-        player_id = ImageElement()
-        player_id.set_top_left((1000 - player_id.rectangle.width, 1000 - player_id.rectangle.height))
-        self.add_element(player_id)
+        player_avatar = ImageElement(name="scarlet")
+        player_id = TextElement(text=f"{player_id.nickname}({player_id.character})",
+                                size=16,
+                                primary_color=Pico.from_character(player_id.character))
+        player = HorizontalStack([player_avatar, player_id], padding=0)
+
+        mustard_avatar = ImageElement(name="mustard")
+        mustard_id = TextElement(text=f"Colonel Mustard",
+                                 size=16,
+                                 primary_color=Pico.from_character(Character.MUSTARD))
+        player_2 = HorizontalStack([mustard_avatar, mustard_id], padding=0)
+
+        stack = VerticalStack([player, player_2], alignment=clueless.client.ui_enums.HorizontalAlignment.LEFT, padding=10)
+        stack.set_top_left((1000 - stack.rectangle.width, 1000 - stack.rectangle.height))
+        self.add_element(stack)
 
 class GameView(View):
     class Delegate(Protocol):
