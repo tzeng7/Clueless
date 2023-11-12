@@ -2,7 +2,6 @@ import queue
 
 import pygame
 import pygame_gui
-from pygame import Surface
 
 from clueless.client.connection import GameConnection
 from clueless.client.view import TitleView, View, GameView
@@ -13,7 +12,7 @@ class GameClient(TitleView.Delegate):
     def __init__(self):
         pygame.init()
         width, height = 1000, 1000
-        self.screen = pygame.display.set_mode((width, height))
+        self.screen: pygame.Surface = pygame.display.set_mode((width, height))
         self.screen.fill('white')
         pygame.display.set_caption("Clueless")
         self.ui_manager = pygame_gui.UIManager((self.screen.get_rect().width, self.screen.get_rect().height))

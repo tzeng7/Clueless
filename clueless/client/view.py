@@ -6,7 +6,7 @@ from pygame import Surface, SurfaceType, Color
 
 import clueless.client.ui_enums
 from clueless.client.ui_enums import Pico
-from clueless.client.ui_elements import Element, TextInputElement, TextElement, ManagedButton, ManagedElement, \
+from clueless.client.ui_elements import Element, TextInputElement, TextElement, ManagedButton, \
     ImageElement, HorizontalStack, VerticalStack
 from clueless.model.board_enums import Character
 from clueless.model.player import PlayerID
@@ -93,13 +93,10 @@ class TitleView(View):
         #                                  primary_color=Color(255, 0, 0),
         #                                  highlight_color=Color(255, 153, 153),
         #                                  on_mouse_down=delegate.did_ready)
-        # self.subtitle_text.rectangle.center = (
-        #     screen.get_rect().width // 2, self.title_text.rectangle.bottom + (self.subtitle_text.rectangle.height // 2)
+        # self.subtitle_text.set_center(
+        #     (screen.get_rect().width // 2, self.title_text.rectangle.bottom + (self.subtitle_text.rectangle.height // 2))
         # )
         # self.add_element(self.subtitle_text)
-        # player_list = TextElement(text="Currently in the lobby: a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z", size=20, primary_color=Color(0, 0, 255))
-        # player_list.rectangle.bottom = screen.get_rect().bottom
-        # self.elements.append(player_list)
 
     def transition_to_ready_button(self):
         self.text_input.hide()
@@ -127,7 +124,7 @@ class TitleView(View):
                                  primary_color=Pico.from_character(Character.MUSTARD))
         player_2 = HorizontalStack([mustard_avatar, mustard_id], padding=0)
 
-        stack = VerticalStack([player, player_2], alignment=clueless.client.ui_enums.HorizontalAlignment.LEFT, padding=10)
+        stack = VerticalStack([player, player_2], alignment=clueless.client.ui_enums.Alignment.LEFT, padding=10)
         stack.set_top_left((1000 - stack.rectangle.width, 1000 - stack.rectangle.height))
         self.add_element(stack)
 

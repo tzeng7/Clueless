@@ -4,7 +4,7 @@ import pygame
 import pygame_gui
 from pygame import Color, Surface
 
-from clueless.client.ui_enums import HorizontalAlignment
+from clueless.client.ui_enums import Alignment
 
 
 @runtime_checkable
@@ -23,7 +23,7 @@ class Hoverable(Protocol):
 
 
 class Element(Protocol):
-    def __init__(self, wrapped, rectangle: pygame.Rect, is_managed: bool):
+    def __init__(self, wrapped: pygame.Surface | pygame_gui.core.UIElement | list, rectangle: pygame.Rect, is_managed: bool):
         self.wrapped = wrapped
         self._rectangle: pygame.Rect = rectangle
         self.is_ui_manager_managed = is_managed
@@ -63,6 +63,7 @@ class Element(Protocol):
             self.mouse_away()
 
 
+# "Managed" by pygame_gui and its UIManager
 class ManagedElement(Element):
     def __init__(self, any_element: pygame_gui.core.UIElement):
         super().__init__(any_element, any_element.rect, is_managed=True)
@@ -99,8 +100,8 @@ class TextElement(Element, Clickable, Hoverable):
                  primary_color: Color = Color("black"),
                  highlight_color: Color | None = None,
                  on_mouse_down: Callable[[], None] | None = None):
-        font = pygame.font.Font(filename="../resources/VT323-Regular.ttf", size=size)
-        surface = font.render(text, True, primary_color, bgcolor=Color("white"))
+        self.font = pygame.font.Font(filename="../resources/VT323-Regular.ttf", size=size)
+        surface =  self.font.render(text, True, primary_color, bgcolor=Color("white"))
         super().__init__(surface, surface.get_rect(), is_managed=False)
         self.text = text
         self.size = size
@@ -121,7 +122,7 @@ class TextElement(Element, Clickable, Hoverable):
 
     def __change_color(self, color):
         old_rect = self.rectangle
-        self.wrapped = pygame.font.Font(size=self.size).render(self.text, True, color)
+        self.wrapped =  self.font.render(self.text, True, color)
         self.wrapped.get_rect().center = old_rect.center
 
     def clicked(self):
@@ -139,67 +140,93 @@ class ImageElement(Element):
         super().__init__(scaled_image, scaled_image.get_rect(), is_managed=False)
 
 
-class HorizontalStack(Element):
-    def __init__(self, elements: list[Element], padding: int):
+class Stack(Element):
+
+    def __init__(self, elements: list[Element], axis: int, alignment: Alignment, padding: int):
         self.elements = elements
-        self.padding = padding
-        total_width = 0
-        for element in elements:
-            total_width += element.rectangle.width
-        total_width += padding * (len(elements) - 1)
-        total_height = max([element.rectangle.height for element in elements])
-        super().__init__(self.elements, pygame.Rect((0, 0), (total_width, total_height)), is_managed=False)
-
-    def draw_onto(self, screen: pygame.Surface):
-        for element in self.elements:
-            element.draw_onto(screen)
-
-    def set_top_left(self, top_left: (int, int)):
-        curr_rel_x = 0
-        for element in self.elements:
-            relative_y = (self.rectangle.height - element.rectangle.height) // 2
-            relative_x = curr_rel_x
-            curr_rel_x += element.rectangle.width + self.padding
-            element.set_top_left((relative_x + top_left[0], relative_y + top_left[1]))
-        self.rectangle.topleft = top_left
-
-    def respond_to_event(self, fn_name, event):
-        for element in self.elements:
-            if hasattr(element, fn_name):
-                getattr(element, fn_name)(event)
-
-class VerticalStack(Element):
-    def __init__(self, elements: list[Element], alignment: HorizontalAlignment, padding: int = 0):
-        self.elements = elements
-        self.padding = padding
+        self.axis = axis
         self.alignment = alignment
-        total_height = 0
-        for element in elements:
-            total_height += element.rectangle.height
-        total_height += padding * (len(elements) - 1)
-        total_width = max([element.rectangle.width for element in elements])
-        super().__init__(self.elements, pygame.Rect((0, 0), (total_width, total_height)), is_managed=False)
+        self.padding = padding
+        super().__init__(elements, self.__calculate_total_rect(), is_managed=False)
+
+    def hide(self):
+        for element in self.elements:
+            element.hide()
+
+    def show(self):
+        for element in self.elements:
+            element.show()
 
     def draw_onto(self, screen: pygame.Surface):
         for element in self.elements:
             element.draw_onto(screen)
 
-    def set_top_left(self, top_left: (int, int)):
-        curr_rel_y = 0
-        for element in self.elements:
-            match self.alignment:
-                case HorizontalAlignment.CENTER:
-                    relative_x = (self.rectangle.width - element.rectangle.width) // 2
-                case HorizontalAlignment.LEFT:
-                    relative_x = 0
-                case HorizontalAlignment.RIGHT:
-                    relative_x = self.rectangle.width - element.rectangle.width
-            relative_y = curr_rel_y
-            curr_rel_y += element.rectangle.height + self.padding
-            element.set_top_left((relative_x + top_left[0], relative_y + top_left[1]))
-        self.rectangle.topleft = top_left
-
     def respond_to_event(self, fn_name, event):
         for element in self.elements:
             if hasattr(element, fn_name):
                 getattr(element, fn_name)(event)
+
+    def set_top_left(self, top_left: (int, int)):
+        relative_x = 0
+        relative_y = 0
+        for element in self.elements:
+            if self.axis == 0:
+                relative_y = self.__calculate_alignment_position(element)[1]
+                temp = relative_x + element.rectangle.width + self.padding
+            else:
+                relative_x = self.__calculate_alignment_position(element)[0]
+                temp = relative_y + element.rectangle.height + self.padding
+
+            element.set_top_left((relative_x + top_left[0], relative_y + top_left[1]))
+
+            if self.axis == 0:
+                relative_x = temp
+            else:
+                relative_y = temp
+        self.rectangle.topleft = top_left
+
+    def __calculate_alignment_position(self, element):
+        relative_x = 0
+        relative_y = 0
+        match self.alignment:
+            case Alignment.CENTER:
+                if self.axis == 0:
+                    relative_y = (self.rectangle.height - element.rectangle.height) // 2
+                else:
+                    relative_x = (self.rectangle.width - element.rectangle.width) // 2
+            case Alignment.LEFT:
+                relative_x = 0
+            case Alignment.RIGHT:
+                relative_x = self.rectangle.width - element.rectangle.width
+            case Alignment.TOP:
+                relative_y = 0
+            case Alignment.BOTTOM:
+                relative_y = self.rectangle.height - element.rectangle.height
+        return relative_x, relative_y
+
+
+    def __calculate_total_rect(self):
+        heights = [element.rectangle.height for element in self.elements]
+        widths = [element.rectangle.width for element in self.elements]
+        if self.axis == 0:
+            total_height = max(heights)
+            total_width = sum(widths)
+            total_width += self.padding * (len(self.elements) - 1)
+        else:
+            # axis == 1
+            total_height = sum(heights)
+            total_height += self.padding * (len(self.elements) - 1)
+            total_width = max(widths)
+        return pygame.Rect((0, 0), (total_width, total_height))
+
+
+class HorizontalStack(Stack):
+    def __init__(self, elements: list[Element], alignment: Alignment = Alignment.CENTER, padding: int = 0):
+        super().__init__(elements, axis=0, alignment=alignment, padding=padding)
+
+
+class VerticalStack(Stack):
+    def __init__(self, elements: list[Element], alignment: Alignment = Alignment.LEFT, padding: int = 0):
+        self.alignment = alignment
+        super().__init__(elements, axis=1, alignment=alignment, padding=padding)
+
