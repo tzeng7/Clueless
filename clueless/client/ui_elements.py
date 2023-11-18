@@ -107,48 +107,62 @@ class ManagedButton(ManagedElement):
     def __init__(self, button: pygame_gui.elements.UIButton, on_click: Callable[[], None]):
         super().__init__(button)
         self.on_click = on_click
+        self.is_selected = False
 
     def respond_to_UIButtonPressed(self, event):
         if event.ui_element == self.wrapped:
-            self.on_click()
+            if not self.is_selected:
+                self.on_click()
+            self.select()
+
+    def select(self):
+        self.is_selected = True
+        self.wrapped.select()
+
+    def unselect(self):
+        self.is_selected = False
+        self.wrapped.unselect()
+
+    def disable(self):
+        self.wrapped.disable()
 
 
-class ActionButton(ManagedButton):
-    def __init__(self, action_type: ActionType, button: pygame_gui.elements.UIButton,
-                 on_click: Callable[[ActionType], None]):
-        super().__init__(button, lambda: on_click(action_type))
-        self.action_type = action_type
+class PayloadButton(ManagedButton):
+    def __init__(self, payload: any, button: pygame_gui.elements.UIButton,
+                 on_click: Callable[[any], None]):
+        super().__init__(button, lambda: on_click(payload))
+        self.payload = payload
 
+    @classmethod
+    def action_button(cls, action_type: ActionType, button: pygame_gui.elements.UIButton,
+                      on_click: Callable[[ActionType], None]):
+        return PayloadButton(action_type, button, on_click)
 
-class DirectionButton(ManagedButton):
-    def __init__(self, movement_option: (Direction, (int, int)), button: pygame_gui.elements.UIButton,
-                 on_click: Callable[[(Direction, (int, int))], None]):
-        super().__init__(button, lambda: on_click(movement_option))
-        self.movement_option = movement_option
+    @classmethod
+    def direction_button(cls, movement_option: (Direction, (int, int)), button: pygame_gui.elements.UIButton,
+                         on_click: Callable[[(Direction, (int, int))], None]):
+        return PayloadButton(movement_option, button, on_click)
 
-class CharacterButton(ManagedButton):
-    def __init__(self, character: Character, button: pygame_gui.elements.UIButton,
-                 on_click: Callable[[Character], None]):
-        super().__init__(button, lambda: on_click(character))
-        self.character = character
+    @classmethod
+    def character_button(self, character: Character, button: pygame_gui.elements.UIButton,
+                         on_click: Callable[[Character], None]):
+        return PayloadButton(character, button, on_click)
 
-class WeaponButton(ManagedButton):
-    def __init__(self, weapon: Weapon, button: pygame_gui.elements.UIButton,
-                 on_click: Callable[[Weapon], None]):
-        super().__init__(button, lambda: on_click(weapon))
-        self.weapon = weapon
+    @classmethod
+    def weapon_button(self, weapon: Weapon, button: pygame_gui.elements.UIButton,
+                      on_click: Callable[[Weapon], None]):
+        return PayloadButton(weapon, button, on_click)
 
-class LocationButton(ManagedButton):
-    def __init__(self, location: Location, button: pygame_gui.elements.UIButton,
-                 on_click: Callable[[Location], None]):
-        super().__init__(button, lambda: on_click(location))
-        self.location = location
+    @classmethod
+    def location_button(self, location: Location, button: pygame_gui.elements.UIButton,
+                        on_click: Callable[[Location], None]):
+        return PayloadButton(location, button, on_click)
 
-class CardButton(ManagedButton):
-    def __init__(self, card: Card | None, button: pygame_gui.elements.UIButton,
-                 on_click: Callable[[Card], None]):
-        super().__init__(button, lambda: on_click(card))
-        self.card = card
+    @classmethod
+    def card_button(self, card: Card, button: pygame_gui.elements.UIButton,
+                    on_click: Callable[[Card], None]):
+        return PayloadButton(card, button, on_click)
+
 
 class TextElement(Element, Clickable, Hoverable):
 
@@ -161,10 +175,11 @@ class TextElement(Element, Clickable, Hoverable):
         self.font = pygame.font.Font(filename="../resources/VT323-Regular.ttf", size=size)
         surface = self.font.render(text, True, primary_color, bgcolor=Color("white"))
         super().__init__(surface, surface.get_rect(), is_managed=False)
-        self.text = text
+        self._text = text
         self.size = size
         self.primary_color = primary_color
         self.highlight_color = highlight_color
+        self.current_color = primary_color
         self.on_mouse_down = on_mouse_down
         self.highlighted = False
 
@@ -179,14 +194,28 @@ class TextElement(Element, Clickable, Hoverable):
             self.__change_color(self.primary_color)
 
     def __change_color(self, color):
+        self.current_color = color
+        self.__rerender()
+
+    def __rerender(self):
         old_rect = self.rectangle
-        self.wrapped = self.font.render(self.text, True, color)
-        self.wrapped.get_rect().center = old_rect.center
+        self.wrapped = self.font.render(self.text, True, self.current_color)
+        self._rectangle = self.wrapped.get_rect()
+        self.rectangle.center = old_rect.center
 
     def clicked(self):
         if not self.on_mouse_down:
             return
         self.on_mouse_down()
+
+    @property
+    def text(self):
+        return self._text
+
+    @text.setter
+    def text(self, new_text: str):
+        self._text = new_text
+        self.__rerender()
 
 
 class ImageElement(Element):
@@ -206,7 +235,6 @@ class ViewBox(Element):
         pygame.draw.rect(screen, pygame.Color(0, 0, 0, 0), self.rectangle, 3, 10)
 
 
-
 class Stack(Element):
 
     def __init__(self, elements: list[Element], axis: int, alignment: Alignment, padding: int):
@@ -215,6 +243,7 @@ class Stack(Element):
         self.alignment = alignment
         self.padding = padding
         super().__init__(elements, self.__calculate_total_rect(), is_managed=False)
+        self.set_top_left((0, 0))
 
     def hide(self):
         for element in self.elements:
@@ -236,6 +265,8 @@ class Stack(Element):
         for element in self.elements:
             if hasattr(element, fn_name):
                 getattr(element, fn_name)(event)
+            elif hasattr(element, "respond_to_event"):
+                getattr(element, "respond_to_event")(fn_name, event)
 
     def set_top_left(self, top_left: (int, int)):
         relative_x = 0
@@ -255,6 +286,12 @@ class Stack(Element):
             else:
                 relative_y = temp
         self.rectangle.topleft = top_left
+
+    def add_element(self, element: Element):
+        self.elements.append(element)
+        old_position = self.rectangle.topleft
+        self._rectangle = self.__calculate_total_rect()
+        self.set_top_left(top_left=old_position)
 
     def __calculate_alignment_position(self, element):
         relative_x = 0
@@ -279,14 +316,14 @@ class Stack(Element):
         heights = [element.rectangle.height for element in self.elements]
         widths = [element.rectangle.width for element in self.elements]
         if self.axis == 0:
-            total_height = max(heights)
+            total_height = max(heights, default=0)
             total_width = sum(widths)
             total_width += self.padding * (len(self.elements) - 1)
         else:
             # axis == 1
             total_height = sum(heights)
             total_height += self.padding * (len(self.elements) - 1)
-            total_width = max(widths)
+            total_width = max(widths, default=0)
         return pygame.Rect((0, 0), (total_width, total_height))
 
 

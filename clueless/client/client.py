@@ -71,38 +71,25 @@ class GameClient(TitleView.Delegate):
         print("READY FROM DELEGATE!")
         self.connection.ready()
 
-    def did_select(self, action_type: ActionType):
+    # ActionView.Delegate
+    def did_move(self, movement_option: (Direction, (int, int))):
         if type(self.view) is not ActionView:
-            print("Error")
-            return
-        action_view: ActionView = self.view
-        # action_message = self.game_manager.next_action(action_type)
-        # print(f"Selected Action! {action_message}")
-        if action_type == ActionType.MOVE:
-            action_view.transition_to_direction(self.game_manager.board.get_movement_options(self.player.player_id))
-        if action_type == ActionType.SUGGEST:
-            action_view.transition_to_suggestion()
-        if action_type == ActionType.ACCUSE:
-            action_view.transition_accuse()
-        if action_type == ActionType.END_TURN:
-            action_view.transition_end_turn()
-            self.connection.Send(EndTurn(self.player.player_id))
-    def did_select_direction(self, movement_option: (Direction, (int, int))):
-        if type(self.view) is not ActionView:
-            print("Error")
+            print("Error: received movement selection but no longer showing action view")
         self.connection.Send(self.game_manager.move(movement_option[1]))
 
-    def did_select_character(self, character: Character):
-        if type(self.view) is not ActionView:
-            print("Error")
-        action_view: ActionView = self.view
-        action_view.transition_weapon()
-
     def did_suggest(self, character: Character, weapon: Weapon):
+        if type(self.view) is not ActionView:
+            print("Error: received suggestion selection but no longer showing action view")
         print(f"Suggested: {character}, {weapon}")
         space = self.game_manager.board.get_player_space(self.player.player_id)
         location = cast(Room, space).room_type
         self.connection.Send(self.game_manager.suggest((character, weapon, location)))
+
+    def did_accuse(self, character: Character, weapon: Weapon, location: Location):
+        self.connection.Send(self.game_manager.accuse((character, weapon, location)))
+
+    def did_end_turn(self):
+        self.connection.Send(self.game_manager.end_turn())
 
     def did_disprove(self, card: Card, suggest: Suggest):
         self.connection.Send(self.game_manager.disprove(card, suggest))
@@ -128,7 +115,7 @@ class GameClient(TitleView.Delegate):
     def handle_msg_start_turn(self, msg: YourTurn):
         print("Received Start Turn!")
         self.game_manager.start_turn(msg.turn_id)
-        self.transition(ActionView(self.screen, self.ui_manager, self, self.game_manager.available_actions()))
+        self.transition(ActionView(self.screen, self.ui_manager, self, self.game_manager))
 
     def handle_msg_deal_cards(self, msg: DealCards):
         print("TODO: Received DealCards!")
@@ -140,7 +127,7 @@ class GameClient(TitleView.Delegate):
         self.game_manager.board.move(msg.player_id, msg.position)
         print(self.game_manager.board)
         if msg.player_id == self.player.player_id:
-            self.transition(ActionView(self.screen, self.ui_manager, self, self.game_manager.available_actions()))
+            self.transition(ActionView(self.screen, self.ui_manager, self, self.game_manager))
 
     def handle_msg_ClientAction_suggest(self, suggest: Suggest):
         if self.player.player_id == suggest.player_id:
@@ -157,7 +144,7 @@ class GameClient(TitleView.Delegate):
     def handle_msg_ClientAction_disprove(self, disprove: Disprove):
         print(f"The disproving card is {disprove.card.card_value}")
         if disprove.suggest.player_id == self.player.player_id:
-            self.transition(ActionView(self.screen, self.ui_manager, self, self.game_manager.available_actions()))
+            self.transition(ActionView(self.screen, self.ui_manager, self, self.game_manager))
 
     def handle_msg_ClientAction_end_turn(self, end_turn: EndTurn):
         pass

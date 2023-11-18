@@ -1,4 +1,5 @@
-from typing import Protocol
+from enum import Enum
+from typing import Protocol, Type
 
 import pygame_gui
 import pygame
@@ -8,8 +9,8 @@ import clueless.client.ui_enums
 from clueless.client.client_game_manager import ClientGameManager
 from clueless.client.ui_enums import Pico
 from clueless.client.ui_elements import Element, TextInputElement, TextElement, ManagedButton, \
-    ImageElement, HorizontalStack, VerticalStack, ActionButton, DirectionButton, ViewBox, \
-    CharacterButton, WeaponButton, Stack, ManagedElement, LocationButton, CardButton
+    ImageElement, HorizontalStack, VerticalStack, ViewBox, \
+    Stack, ManagedElement, PayloadButton
 from clueless.messages.messages import BaseClientAction, Move, Suggest
 from clueless.model.board_enums import Character, ActionType, Direction, Weapon, Location
 from clueless.model.card import Card
@@ -18,7 +19,7 @@ from clueless.model.player import PlayerID
 
 class View(Protocol):
 
-    def __init__(self, screen: Surface | SurfaceType, ui_manager: pygame_gui.UIManager):
+    def __init__(self, screen: Surface, ui_manager: pygame_gui.UIManager):
         self.screen = screen
         self.ui_manager = ui_manager
         self.ui_manager.clear_and_reset()
@@ -146,11 +147,13 @@ class GameView(View):
 # class BoardView(View):
 #     class Delegate(Protocol):
 class ActionView(View):
-    class Delegate(Protocol):
-        def did_select(self, action_type: ActionType):
-            pass
+    HORIZONTAL_PADDING = 15
+    VERTICAL_PADDING = 5
+    BOX_PADDING = 100
+    MAX_LEVELS = 4
 
-        def did_select_direction(self, direction: Direction):
+    class Delegate(Protocol):
+        def did_move(self, direction: (Direction, (int, int))):
             pass
 
         def did_suggest(self, character: Character, weapon: Weapon):
@@ -162,169 +165,186 @@ class ActionView(View):
         def did_accuse(self, character: Character, weapon: Weapon, location: Location):
             pass
 
+        def did_end_turn(self):
+            pass
+
     def __init__(self, screen: pygame.Surface, ui_manager: pygame_gui.UIManager, delegate: Delegate,
-                 available_actions: [ActionType]):
+                 game_manager: ClientGameManager):
         super().__init__(screen, ui_manager)
-
-        self.choose_action_text = TextElement("Please select an action: ")
-        self.choose_action_text.set_center((500, 775))
-        self.add_element(self.choose_action_text)
-
-        rectangle = pygame.Rect(.5, 750, 1000, 249)
-        action_box = ViewBox(rectangle, screen)
-        self.add_element(action_box)
         self.delegate = delegate
+        self.game_manager = game_manager
+        self.current_selection = []
+        self.levels: list[list[PayloadButton]] = []
+        self.__setup_elements()
 
-        pos = pygame.Rect((0, 0), (200, 30))
+    def __setup_elements(self):
+        button_width = (self.screen.get_width() - (
+                self.HORIZONTAL_PADDING * (self.MAX_LEVELS - 1)) - (self.BOX_PADDING * 2)) // self.MAX_LEVELS
+        button_height = 24  # TODO: fixed
+        self.button_dimensions = pygame.Rect((0, 0), (button_width, button_height))
+        dialog, button_stack = self.__generate_next_menu_level()
+        first_level_button_stack = VerticalStack(elements=button_stack, padding=self.VERTICAL_PADDING)
+        self.levels.append(button_stack)
+        self.menu_dialog = TextElement(dialog)
+        self.menu_dialog.set_center((500, 600 + (self.menu_dialog.rectangle.height // 2)))
+        self.menu = HorizontalStack([first_level_button_stack], alignment=clueless.client.ui_enums.Alignment.TOP,
+                                    padding=self.HORIZONTAL_PADDING)
+        self.menu.set_top_left((self.BOX_PADDING, self.menu_dialog.rectangle.bottom + self.VERTICAL_PADDING))
+        self.add_element(self.menu_dialog)
+        self.add_element(self.menu)
+
+    def __generate_next_menu_level(self) -> (str, list[PayloadButton]):
         button_list = []
-        for action in available_actions:
-            button_list.append(ActionButton(action_type=action,
-                                            button=pygame_gui.elements.UIButton(relative_rect=pos,
-                                                                                text=action.name,
-                                                                                manager=ui_manager,
-                                                                                visible=True),
-                                            on_click=delegate.did_select))
+        if len(self.current_selection) == 0:
+            for action in self.game_manager.available_actions():
+                button_list.append(PayloadButton.action_button(
+                    action_type=action,
+                    button=pygame_gui.elements.UIButton(relative_rect=self.button_dimensions,
+                                                        text=action.name,
+                                                        manager=self.ui_manager,
+                                                        visible=True),
+                    on_click=self.__menu_clicked
+                ))
+            return "Please select an action: ", button_list
+        else:
+            match (self.current_selection[0], len(self.current_selection)):
+                case ActionType.MOVE, 1:
+                    return "Please select a possible direction: ", self.__make_direction_buttons(
+                        self.game_manager.available_movement_options())
+                case ActionType.SUGGEST, 1:
+                    return "Please select a character to suggest: ", self.__make_card_entry_buttons(Character)
+                case ActionType.SUGGEST, 2:
+                    return "Please select a weapon to suggest: ", self.__make_card_entry_buttons(Weapon)
+                case ActionType.ACCUSE, 1:
+                    return "Please select a character to accuse: ", self.__make_card_entry_buttons(Character)
+                case ActionType.ACCUSE, 2:
+                    return (f"Please select the weapon that {self.current_selection[1].value} used: ",
+                            self.__make_card_entry_buttons(Weapon))
+                case ActionType.ACCUSE, 3:
+                    return (f"Please select the room where {self.current_selection[1].value} "
+                            f"used the {self.current_selection[2].value}: "), self.__make_card_entry_buttons(
+                        Location)
+                case _:
+                    return "", []
 
-        stack = VerticalStack(button_list, padding=25)
-        stack.set_top_left((stack.rectangle.width - 100, 900 - stack.rectangle.height))
-        self.add_element(stack)
+    def __menu_clicked(self, payload):
+        self.current_selection.append(payload)
+        # highlight selection and disable rest
+        for button in self.levels[-1]:
+            if button.payload == payload:
+                button.select()
+            else:
+                button.disable()
 
-    def transition_to_direction(self, directions: list[(Direction, (int, int))]):
-        for element in self.elements:
-            if isinstance(element, Stack):
-                self.del_element(element)
+        dialog, button_stack = self.__generate_next_menu_level()
+        self.levels.append(button_stack)
+
+        if len(button_stack) > 0:
+            # push next level
+            self.menu.add_element(VerticalStack(elements=button_stack, padding=self.VERTICAL_PADDING))
+            self.menu_dialog.text = dialog
+        else:
+            match self.current_selection[0]:
+                case ActionType.MOVE:
+                    self.delegate.did_move(self.current_selection[1])
+                case ActionType.SUGGEST:
+                    self.delegate.did_suggest(self.current_selection[1], self.current_selection[2])
+                case ActionType.ACCUSE:
+                    self.delegate.did_accuse(self.current_selection[1], self.current_selection[2],
+                                             self.current_selection[3])
+                case ActionType.END_TURN:
+                    self.delegate.did_end_turn()
+
+    def __make_direction_buttons(self, directions: list[(Direction, (int, int))]) -> list[PayloadButton]:
+        # for element in self.elements:
+        #     if isinstance(element, Stack):
+        #         self.del_element(element)
 
         button_list = []
-        choose_direction = TextElement("Please select a possible direction: ")
-        choose_direction.set_center((500, 775))
-        self.add_element(choose_direction)
-
-        pos = pygame.Rect((0, 0), (200, 30))
         for direction in directions:
-            button_list.append(DirectionButton(movement_option=direction,
-                                               button=pygame_gui.elements.UIButton(relative_rect=pos,
-                                                                                   text=direction[0].name,
-                                                                                   manager=self.ui_manager,
-                                                                                   visible=True),
-                                               on_click=self.delegate.did_select_direction))
-        stack = HorizontalStack(button_list, padding=25)
-        stack.set_center((500, 850))
-        self.add_element(stack)
+            button_list.append(PayloadButton.direction_button(
+                movement_option=direction,
+                button=pygame_gui.elements.UIButton(relative_rect=self.button_dimensions,
+                                                    text=direction[0].name,
+                                                    manager=self.ui_manager,
+                                                    visible=True),
+                on_click=self.__menu_clicked
+            ))
+        return button_list
 
-    ##############################
-    ###         SUGGEST        ###
-    ##############################
-
-    #starts suggestion view - shows character first
-    def transition_to_suggestion(self):
-        for element in self.elements:
-            if isinstance(element, Stack) or isinstance(element, TextElement):
-                self.del_element(element)
-
+    def __make_card_entry_buttons(self, type: Type[Enum]):
         button_list = []
-        choose_character = TextElement("Please select a character to suggest: ")
-        choose_character.set_center((500, 775))
-        self.add_element(choose_character)
-
-        pos = pygame.Rect((0, 0), (100, 30))
-        for character in Character:
+        for case in type:
             button_list.append(
-                CharacterButton(character=character, button=pygame_gui.elements.UIButton(relative_rect=pos,
-                                                                                         text=character.value,
-                                                                                         manager=self.ui_manager,
-                                                                                         visible=True),
-                                on_click=self.did_select_character))
-        stack = HorizontalStack(button_list, padding=15)
-        stack.set_center((500, 850))
-        self.add_element(stack)
+                PayloadButton(payload=case,
+                              button=pygame_gui.elements.UIButton(relative_rect=self.button_dimensions,
+                                                                  text=case.value,
+                                                                  manager=self.ui_manager,
+                                                                  visible=True),
+                              on_click=self.__menu_clicked)
+            )
+        return button_list
 
-    # transitions to weapon view during suggest phase
-    def __transition_weapon(self):
-        for element in self.elements:
-            if isinstance(element, Stack) or isinstance(element, TextElement):
-                self.del_element(element)
-        button_list = []
+    # def transition_disprove(self, disproving_cards: [Card]):
+    #     for element in self.elements:
+    #         if isinstance(element, Stack) or isinstance(element, TextElement):
+    #             self.del_element(element)
+    #     button_list = []
+    #
+    #     choose_disproving_suggestion = TextElement("Please select a card to disprove with: ")
+    #     choose_disproving_suggestion.set_center((500, 775))
+    #     self.add_element(choose_disproving_suggestion)
+    #
+    #     pos = pygame.Rect((0, 0), (100, 30))
+    #     for card in disproving_cards:
+    #         button_list.append(CardButton(card=card, button=pygame_gui.elements.UIButton(relative_rect=pos,
+    #                                                                                      text=f"{card.type}.{card.value}",
+    #                                                                                      manager=self.ui_manager,
+    #                                                                                      visible=True),
+    #                                       on_click=self.delegate.did_disprove))
+    #
+    #     stack = HorizontalStack(button_list, padding=15)
+    #     stack.set_center((500, 850))
+    #     self.add_element(stack)
 
-        choose_weapon = TextElement("Please select a weapon to suggest: ")
-        choose_weapon.set_center((500, 775))
-        self.add_element(choose_weapon)
+    # # Transition to accuse part of action view - start with characters
+    # def transition_accuse(self):
+    #     for element in self.elements:
+    #         if isinstance(element, Stack) or isinstance(element, TextElement):
+    #             self.del_element(element)
+    #
+    #     button_list = []
+    #     choose_character = TextElement("Please select a character to accuse: ")
+    #     choose_character.set_center((500, 775))
+    #     self.add_element(choose_character)
+    #
+    #     pos = pygame.Rect((0, 0), (100, 30))
+    #     for character in Character:
+    #         button_list.append(
+    #             CharacterButton(character=character, button=pygame_gui.elements.UIButton(relative_rect=pos,
+    #                                                                                      text=character.value,
+    #                                                                                      manager=self.ui_manager,
+    #                                                                                      visible=True),
+    #                             on_click=self.did_accuse_character))
+    #     stack = HorizontalStack(button_list, padding=15)
+    #     stack.set_center((500, 850))
+    #     self.add_element(stack)
+    #
+    #
+    #
+    #
+    #
+    # ##################################
+    # #              END TURN          #
+    # ##################################
+    # def transition_end_turn(self):
+    #     for element in self.elements:
+    #         if isinstance(element, Stack) or isinstance(element, TextElement):
+    #             self.del_element(element)
+    #     turn_over_text = TextElement("TURN OVER")
+    #     turn_over_text.set_center((500, 850))
+    #     self.add_element(turn_over_text)
 
-        pos = pygame.Rect((0, 0), (100, 30))
-        for weapon in Weapon:
-            button_list.append(
-                WeaponButton(weapon=weapon, button=pygame_gui.elements.UIButton(relative_rect=pos,
-                                                                                text=weapon.value,
-                                                                                manager=self.ui_manager,
-                                                                                visible=True),
-                             on_click=lambda w: self.delegate.did_suggest(self.last_selection, w)))
-        stack = HorizontalStack(button_list, padding=15)
-        stack.set_center((500, 850))
-        self.add_element(stack)
-
-    # after select character view, show select weapon view
-    def did_select_character(self, character: Character):
-        self.last_selection = character
-        self.__transition_weapon()
-
-    def transition_disprove(self, disproving_cards: [Card]):
-        for element in self.elements:
-            if isinstance(element, Stack) or isinstance(element, TextElement):
-                self.del_element(element)
-        button_list = []
-
-        choose_disproving_suggestion = TextElement("Please select a card to disprove with: ")
-        choose_disproving_suggestion.set_center((500, 775))
-        self.add_element(choose_disproving_suggestion)
-
-        pos = pygame.Rect((0, 0), (100, 30))
-        for card in disproving_cards:
-            button_list.append(CardButton(card=card, button=pygame_gui.elements.UIButton(relative_rect=pos,
-                                                                                         text=f"{card.type}.{card.value}",
-                                                                                         manager=self.ui_manager,
-                                                                                         visible=True),
-                                          on_click=self.delegate.did_disprove))
-
-        stack = HorizontalStack(button_list, padding=15)
-        stack.set_center((500, 850))
-        self.add_element(stack)
-
-    # Transition to accuse part of action view - start with characters
-    def transition_accuse(self):
-        for element in self.elements:
-            if isinstance(element, Stack) or isinstance(element, TextElement):
-                self.del_element(element)
-
-        button_list = []
-        choose_character = TextElement("Please select a character to accuse: ")
-        choose_character.set_center((500, 775))
-        self.add_element(choose_character)
-
-        pos = pygame.Rect((0, 0), (100, 30))
-        for character in Character:
-            button_list.append(
-                CharacterButton(character=character, button=pygame_gui.elements.UIButton(relative_rect=pos,
-                                                                                         text=character.value,
-                                                                                         manager=self.ui_manager,
-                                                                                         visible=True),
-                                on_click=self.did_accuse_character))
-        stack = HorizontalStack(button_list, padding=15)
-        stack.set_center((500, 850))
-        self.add_element(stack)
-
-
-
-
-
-    ##################################
-    #              END TURN          #
-    ##################################
-    def transition_end_turn(self):
-        for element in self.elements:
-            if isinstance(element, Stack) or isinstance(element, TextElement):
-                self.del_element(element)
-        turn_over_text = TextElement("TURN OVER")
-        turn_over_text.set_center((500, 850))
-        self.add_element(turn_over_text)
 
 class DisproveView(View):
     class Delegate(Protocol):
@@ -368,5 +388,3 @@ class DisproveView(View):
         stack = HorizontalStack(button_list, padding=15)
         stack.set_center((500, 850))
         self.add_element(stack)
-
-
