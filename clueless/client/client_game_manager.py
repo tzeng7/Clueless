@@ -4,6 +4,7 @@ from client_player import ClientPlayer
 from clueless.messages.messages import BaseClientAction, Move, Suggest, Disprove, EndTurn, Accuse, EndGame
 from clueless.model.board import Board, Room
 from clueless.model.board_enums import ActionType, Direction, Character, Weapon, Location
+from clueless.model.card import Card
 
 
 class Turn:
@@ -27,44 +28,53 @@ class ClientGameManager:
         self.previous_turn = self.current_turn
         self.current_turn = Turn(turn_id=turn_id)
 
-    def disprove(self, suggestion: Suggest):
+    def disproving_cards(self, suggestion: Suggest):
         disproving_cards = []
         for card in self.player.cards:
-            for c in card:
-                if c.matches(suggestion.suggestion):
-                    disproving_cards.append(c)
-        print([card for card in disproving_cards])
-        if not disproving_cards:
-            input("No cards to disprove: Hit enter")
-            selected_action = Disprove(self.player.player_id, None, suggestion)
-        else:
-            choice = int(input("Which card: "))
-            selected_action = Disprove(self.player.player_id, disproving_cards[choice], suggestion)
-        return selected_action
-
-    def next_action(self) -> BaseClientAction:
-        print("Choose an action: ")
-        actions = self.__available_actions()
-        for index, action in enumerate(actions):
-            print(f"{index + 1}.  {action.value}")
-        choice = int(input("Choice: "))
-        while not choice or choice <= 0 or choice > len(actions):
-            print("Invalid input!")
-            choice = int(input("Choice: "))
-
-        match actions[choice - 1]:
-            case ActionType.MOVE:
-                # TODO: LOG BOARD // TEST EACH DIRECTION AND TRAVERSE WHOLE BOARD // TEST BEING BLOCKED IN HALLWAY
-                # TODO: WHAT IF THERE ARE NO DIRECTIONS YOU CAN MOVE
-                # print out which room has what per row of grid // string wrapper for board
-                possible_directions = self.board.get_movement_options(self.player.player_id)
-                for idx, possible_choice in enumerate(possible_directions):
-                    print(f"{idx + 1}. {possible_choice[0].name}")
-                choice = int(input("Choose direction: "))
-                selected_action = Move(
+            if card.matches(suggestion.suggestion):
+                disproving_cards.append(card)
+        return disproving_cards
+    def disprove(self, card: Card, suggest: Suggest):
+        disprove_command = Disprove(player_id=self.player.player_id,
+                                    card=card,
+                                    suggest= suggest)
+        return disprove_command
+    def move(self, position: (int, int)):
+        move_command = Move(
                     player_id=self.player.player_id,
-                    position=possible_directions[choice - 1][1]
+                    position=position
                 )
+        self.current_turn.actions_taken.append(move_command)
+        return move_command
+
+    def suggest(self, suggestion: (Character, Weapon, Location)):
+        suggest_command = Suggest(player_id= self.player.player_id, suggestion= suggestion)
+        self.current_turn.actions_taken.append(suggest_command)
+        return suggest_command
+
+    def next_action(self, selected_action: ActionType) -> BaseClientAction:
+        # print("Choose an action: ")
+        # actions = self.__available_actions()
+        # for index, action in enumerate(actions):
+        #     print(f"{index + 1}.  {action.value}")
+        # choice = int(input("Choice: "))
+        # while not choice or choice <= 0 or choice > len(actions):
+        #     print("Invalid input!")
+        #     choice = int(input("Choice: "))
+
+        match selected_action:
+            # case ActionType.MOVE:
+            #     # TODO: LOG BOARD // TEST EACH DIRECTION AND TRAVERSE WHOLE BOARD // TEST BEING BLOCKED IN HALLWAY
+            #     # TODO: WHAT IF THERE ARE NO DIRECTIONS YOU CAN MOVE
+            #     # print out which room has what per row of grid // string wrapper for board
+            #     # possible_directions = self.board.get_movement_options(self.player.player_id)
+            #     # for idx, possible_choice in enumerate(possible_directions):
+            #     #     print(f"{idx + 1}. {possible_choice[0].name}")
+            #     # choice = int(input("Choose direction: "))
+            #     selected_action = Move(
+            #         player_id=self.player.player_id,
+            #         position=possible_directions[choice - 1][1]
+            #     )
 
             case ActionType.SUGGEST:
                 print([character.value for character in list(Character)])
@@ -129,14 +139,14 @@ class ClientGameManager:
 
 
 
-    def __available_actions(self):
+    def available_actions(self):
 
         available = []
 
         if self.board.get_movement_options(self.player.player_id) and not self.current_turn.actions_taken:
             available.append(ActionType.MOVE)
-        if self.player.is_lastmove_suggested or (self.current_turn.is_last_action_move() and \
-                self.board.is_in_room(self.player.player_id)):  # or moved by suggestion
+        if self.player.is_lastmove_suggested or (self.current_turn.is_last_action_move() and
+                                                 self.board.is_in_room(self.player.player_id)):  # or moved by suggestion
             available.append(ActionType.SUGGEST)
         available.append(ActionType.ACCUSE)
         if len(available) == 1 and available[0] == ActionType.ACCUSE:

@@ -35,22 +35,30 @@ class JoinGame(BaseMessage):
 class Ready(BaseMessage):
     name = "ready"
 
+
 class EndGame(BaseMessage):
     name = "end_game"
 
+
 class BaseClientAction(BaseMessage):
+    action_type = None
     name = "ClientAction"
+
+    @classmethod
+    def client_action_name(cls):
+        if hasattr(cls, "action_type") and cls.action_type:
+            return f"ClientAction_{cls.action_type.value}"
+        else:
+            return "ClientAction"
 
     def __init__(self, player_id: PlayerID):
         super().__init__()
         self.player_id = player_id
-        if hasattr(self, "action_type") and self.action_type:
-            self.name = f"ClientAction_{self.action_type.value}"
+        self.name = self.client_action_name()
 
 
 class Move(BaseClientAction):
     action_type = ActionType.MOVE
-
 
     def __init__(self, player_id: PlayerID, position: (int, int)):
         super().__init__(player_id)
@@ -143,6 +151,7 @@ class RequestDisprove(BaseMessage):
 class Accuse(BaseClientAction):
     action_type = ActionType.ACCUSE
     is_correct = False
+
     def __init__(self, player_id: PlayerID, accusation: (Character, Weapon, Location)):
         super().__init__(player_id)
         self.accusation = accusation

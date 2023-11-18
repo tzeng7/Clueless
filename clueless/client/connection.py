@@ -5,7 +5,7 @@ from PodSixNet.Connection import ConnectionListener, connection
 import time
 
 from clueless.messages.messages import JoinGame, Ready, UpdatePlayers, AssignPlayerID, DealCards, YourTurn, RequestDisprove, \
-    Disprove, BaseMessage, StartGame, Move, Suggest, Accuse, EndTurn
+    Disprove, BaseMessage, StartGame, Move, Suggest, Accuse, EndTurn, BaseClientAction
 
 
 class GameConnection(ConnectionListener):
@@ -35,36 +35,42 @@ class GameConnection(ConnectionListener):
     def ready(self):
         self.Send(Ready())
 
+    def move(self, msg: Move):
+        self.Send(Move(msg.player_id, msg.position))
+
+    def next_action(self, msg: BaseClientAction):
+        self.Send(msg)
+
     #######################################
     ### Network event/message callbacks ###
     #######################################
     def Network(self, data):
         msg_type: Type[BaseMessage]
-        match data['action']:
-            case AssignPlayerID.name:
-                msg_type = AssignPlayerID
-            case UpdatePlayers.name:
-                msg_type = UpdatePlayers
-            case StartGame.name:
-                msg_type = StartGame
-            case DealCards.name:
-                msg_type = DealCards
-            case YourTurn.name:
-                msg_type = YourTurn
-            # CLIENT ACTIONS
-            case Move.name:
-                msg_type = Move
-            case Suggest.name:
-                msg_type = Suggest
-            case Disprove.name:
-                msg_type = Disprove
-            case RequestDisprove.name:
-                msg_type = RequestDisprove
-            case Accuse.name:
-                msg_type = Accuse
-            case _:
-                print(f"ERROR: couldn't find corresponding message for {data['action']}")
-                return
+        action_name = data['action']
+        if action_name == AssignPlayerID.name:
+            msg_type = AssignPlayerID
+        elif action_name == UpdatePlayers.name:
+            msg_type = UpdatePlayers
+        elif action_name == StartGame.name:
+            msg_type = StartGame
+        elif action_name == DealCards.name:
+            msg_type = DealCards
+        elif action_name == YourTurn.name:
+            msg_type = YourTurn
+        # CLIENT ACTIONS
+        elif action_name == Move.client_action_name():
+            msg_type = Move
+        elif action_name == Suggest.client_action_name():
+            msg_type = Suggest
+        elif action_name == Disprove.client_action_name():
+            msg_type = Disprove
+        elif action_name == RequestDisprove.name:
+            msg_type = RequestDisprove
+        elif action_name == Accuse.client_action_name():
+            msg_type = Accuse
+        else:
+            print(f"ERROR: couldn't find corresponding message for {data['action']}")
+            return
         self.message_queue.put(msg_type.deserialize(data))
 
     # def Network_assign_player_id(self, data):

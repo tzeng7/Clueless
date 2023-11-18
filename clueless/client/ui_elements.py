@@ -5,6 +5,8 @@ import pygame_gui
 from pygame import Color, Surface
 
 from clueless.client.ui_enums import Alignment
+from clueless.model.board_enums import ActionType, Direction, Character, Weapon, Location
+from clueless.model.card import Card
 
 
 @runtime_checkable
@@ -23,10 +25,12 @@ class Hoverable(Protocol):
 
 
 class Element(Protocol):
-    def __init__(self, wrapped: pygame.Surface | pygame_gui.core.UIElement | list, rectangle: pygame.Rect, is_managed: bool):
+    def __init__(self, wrapped: pygame.Surface | pygame_gui.core.UIElement | list, rectangle: pygame.Rect,
+                 is_managed: bool):
         self.wrapped = wrapped
         self._rectangle: pygame.Rect = rectangle
         self.is_ui_manager_managed = is_managed
+        self.is_hidden = False
 
     @property
     def rectangle(self):
@@ -40,13 +44,19 @@ class Element(Protocol):
         self.set_top_left(top_left)
 
     def draw_onto(self, screen: pygame.Surface):
+        if self.is_hidden:
+            return
         screen.blit(self.wrapped, self.rectangle)
 
     def hide(self):
-        self.wrapped.hide()
+        self.is_hidden = True
 
     def show(self):
-        self.wrapped.show()
+        self.is_hidden = False
+
+    # Permanently remove and clean up element from any managers.
+    def kill(self):
+        pass
 
     def respond_to_MouseDown(self, event):
         if not isinstance(self, Clickable):
@@ -74,6 +84,16 @@ class ManagedElement(Element):
     def set_top_left(self, top_left: (int, int)):
         self.wrapped.set_position(top_left)
 
+    def hide(self):
+        self.wrapped.hide()
+
+    def show(self):
+        self.wrapped.show()
+
+    def kill(self):
+        self.wrapped.kill()
+
+
 class TextInputElement(ManagedElement):
     def __init__(self, input: pygame_gui.elements.UITextEntryLine, on_text_finished: Callable[[str], None]):
         super().__init__(input)
@@ -84,13 +104,51 @@ class TextInputElement(ManagedElement):
 
 
 class ManagedButton(ManagedElement):
-    def __init__(self, button: pygame_gui.elements.UIButton, on_click: Callable[[str], None]):
+    def __init__(self, button: pygame_gui.elements.UIButton, on_click: Callable[[], None]):
         super().__init__(button)
         self.on_click = on_click
 
     def respond_to_UIButtonPressed(self, event):
-        self.on_click()
+        if event.ui_element == self.wrapped:
+            self.on_click()
 
+
+class ActionButton(ManagedButton):
+    def __init__(self, action_type: ActionType, button: pygame_gui.elements.UIButton,
+                 on_click: Callable[[ActionType], None]):
+        super().__init__(button, lambda: on_click(action_type))
+        self.action_type = action_type
+
+
+class DirectionButton(ManagedButton):
+    def __init__(self, movement_option: (Direction, (int, int)), button: pygame_gui.elements.UIButton,
+                 on_click: Callable[[(Direction, (int, int))], None]):
+        super().__init__(button, lambda: on_click(movement_option))
+        self.movement_option = movement_option
+
+class CharacterButton(ManagedButton):
+    def __init__(self, character: Character, button: pygame_gui.elements.UIButton,
+                 on_click: Callable[[Character], None]):
+        super().__init__(button, lambda: on_click(character))
+        self.character = character
+
+class WeaponButton(ManagedButton):
+    def __init__(self, weapon: Weapon, button: pygame_gui.elements.UIButton,
+                 on_click: Callable[[Weapon], None]):
+        super().__init__(button, lambda: on_click(weapon))
+        self.weapon = weapon
+
+class LocationButton(ManagedButton):
+    def __init__(self, location: Location, button: pygame_gui.elements.UIButton,
+                 on_click: Callable[[Location], None]):
+        super().__init__(button, lambda: on_click(location))
+        self.location = location
+
+class CardButton(ManagedButton):
+    def __init__(self, card: Card | None, button: pygame_gui.elements.UIButton,
+                 on_click: Callable[[Card], None]):
+        super().__init__(button, lambda: on_click(card))
+        self.card = card
 
 class TextElement(Element, Clickable, Hoverable):
 
@@ -101,7 +159,7 @@ class TextElement(Element, Clickable, Hoverable):
                  highlight_color: Color | None = None,
                  on_mouse_down: Callable[[], None] | None = None):
         self.font = pygame.font.Font(filename="../resources/VT323-Regular.ttf", size=size)
-        surface =  self.font.render(text, True, primary_color, bgcolor=Color("white"))
+        surface = self.font.render(text, True, primary_color, bgcolor=Color("white"))
         super().__init__(surface, surface.get_rect(), is_managed=False)
         self.text = text
         self.size = size
@@ -122,7 +180,7 @@ class TextElement(Element, Clickable, Hoverable):
 
     def __change_color(self, color):
         old_rect = self.rectangle
-        self.wrapped =  self.font.render(self.text, True, color)
+        self.wrapped = self.font.render(self.text, True, color)
         self.wrapped.get_rect().center = old_rect.center
 
     def clicked(self):
@@ -133,11 +191,20 @@ class TextElement(Element, Clickable, Hoverable):
 
 class ImageElement(Element):
     def __init__(self, name):
-        image = pygame.image.load(f'../resources/amongus_{name}.png').convert_alpha()
+        image = pygame.image.load(f'../resources/{name}.png').convert_alpha()
         DEFAULT_IMAGE_SIZE = (50, 50)
         # Scale the image to your needed size
         scaled_image = pygame.transform.smoothscale(image, DEFAULT_IMAGE_SIZE)
         super().__init__(scaled_image, scaled_image.get_rect(), is_managed=False)
+
+
+class ViewBox(Element):
+    def __init__(self, rect: pygame.Rect, screen: pygame.Surface):
+        super().__init__(screen, rect, False)
+
+    def draw_onto(self, screen: pygame.Surface):
+        pygame.draw.rect(screen, pygame.Color(0, 0, 0, 0), self.rectangle, 3, 10)
+
 
 
 class Stack(Element):
@@ -156,6 +223,10 @@ class Stack(Element):
     def show(self):
         for element in self.elements:
             element.show()
+
+    def kill(self):
+        for element in self.elements:
+            element.kill()
 
     def draw_onto(self, screen: pygame.Surface):
         for element in self.elements:
@@ -204,7 +275,6 @@ class Stack(Element):
                 relative_y = self.rectangle.height - element.rectangle.height
         return relative_x, relative_y
 
-
     def __calculate_total_rect(self):
         heights = [element.rectangle.height for element in self.elements]
         widths = [element.rectangle.width for element in self.elements]
@@ -229,4 +299,3 @@ class VerticalStack(Stack):
     def __init__(self, elements: list[Element], alignment: Alignment = Alignment.LEFT, padding: int = 0):
         self.alignment = alignment
         super().__init__(elements, axis=1, alignment=alignment, padding=padding)
-
