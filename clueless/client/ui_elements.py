@@ -232,7 +232,7 @@ class ViewBox(Element):
         super().__init__(screen, rect, False)
 
     def draw_onto(self, screen: pygame.Surface):
-        pygame.draw.rect(screen, pygame.Color(0, 0, 0, 0), self.rectangle, 3, 10)
+        pygame.draw.rect(screen, pygame.Color(0, 0, 0, 0), self.rectangle, 4, 10)
 
 
 class Stack(Element):

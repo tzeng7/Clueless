@@ -9,7 +9,7 @@ from clueless.client.client_player import ClientPlayer
 from clueless.client.connection import GameConnection
 from clueless.client.view import TitleView, View, GameView, ActionView, DisproveView
 from clueless.messages.messages import AssignPlayerID, UpdatePlayers, StartGame, Move, DealCards, YourTurn, Suggest, \
-    RequestDisprove, Disprove, EndTurn
+    RequestDisprove, Disprove, EndTurn, Accuse
 from clueless.model.board import Room
 from clueless.model.board_enums import ActionType, Direction, Character, Weapon, Location
 from clueless.model.card import Card
@@ -98,11 +98,12 @@ class GameClient(TitleView.Delegate):
         if type(self.view) is not TitleView:
             print("Error: received AssignPlayerID but no longer showing title view")
         self.player = ClientPlayer(msg.player_id)
-        self.view.add_player_id(msg.player_id)
+        # self.view.add_player_id(msg.player_id)
 
     def handle_msg_update_players(self, msg: UpdatePlayers):
         if type(self.view) is not TitleView:
             print("Error: received UpdatePlayers but no longer showing title view")
+        self.view.add_player_id(msg.players)
         print("Received UpdatePlayers!")
 
     def handle_msg_start_game(self, msg: StartGame):
@@ -145,6 +146,10 @@ class GameClient(TitleView.Delegate):
         print(f"The disproving card is {disprove.card.card_value}")
         if disprove.suggest.player_id == self.player.player_id:
             self.transition(ActionView(self.screen, self.ui_manager, self, self.game_manager))
+
+    def handle_msg_ClientAction_accuse(self, accuse: Accuse):
+        print(f"The accusation is {accuse.accusation[0], accuse.accusation[1], accuse.accusation[2]}")
+
 
     def handle_msg_ClientAction_end_turn(self, end_turn: EndTurn):
         pass

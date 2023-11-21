@@ -12,7 +12,7 @@ from clueless.client.ui_elements import Element, TextInputElement, TextElement, 
     ImageElement, HorizontalStack, VerticalStack, ViewBox, \
     Stack, ManagedElement, PayloadButton
 from clueless.messages.messages import BaseClientAction, Move, Suggest
-from clueless.model.board_enums import Character, ActionType, Direction, Weapon, Location
+from clueless.model.board_enums import Character, ActionType, Direction, Weapon, Location, CardType
 from clueless.model.card import Card
 from clueless.model.player import PlayerID
 
@@ -113,22 +113,40 @@ class TitleView(View):
         ready_button.set_center((self.screen.get_rect().width // 2, self.screen.get_rect().height // 2))
         self.add_element(ready_button)
 
-    def add_player_id(self, player_id: PlayerID):
-        player_avatar = ImageElement(name="amongus_scarlet")
-        player_id = TextElement(text=f"{player_id.nickname}({player_id.character})",
-                                size=16,
-                                primary_color=Pico.from_character(player_id.character))
-        player = HorizontalStack([player_avatar, player_id], padding=0)
+    def add_player_id(self, players: [PlayerID]):
 
-        # mustard_avatar = ImageElement(name="amongus_mustard")
-        # mustard_id = TextElement(text=f"Colonel Mustard",
-        #                          size=16,
-        #                          primary_color=Pico.from_character(Character.MUSTARD))
-        # player_2 = HorizontalStack([mustard_avatar, mustard_id], padding=0)
+        player_list = []
+        for player in players:
+            player_avatar = ImageElement(name=f"amongus_{player.character}")
+            player_id = TextElement(text=f"{player.nickname}({player.character})",
+                                    size=16,
+                                    primary_color=Pico.from_character(player.character))
+            player_stack = HorizontalStack([player_avatar, player_id], padding=0)
+            player_list.append(player_stack)
 
-        stack = VerticalStack([player], alignment=clueless.client.ui_enums.Alignment.LEFT, padding=10)
+
+        stack = VerticalStack(player_list, alignment=clueless.client.ui_enums.Alignment.LEFT, padding=10)
         stack.set_top_left((1000 - stack.rectangle.width, 1000 - stack.rectangle.height))
         self.add_element(stack)
+
+
+
+        # player_avatar = ImageElement(name="amongus_scarlet")
+        # player_id = TextElement(text=f"{player_id.nickname}({player_id.character})",
+        #                         size=16,
+        #                         primary_color=Pico.from_character(player_id.character))
+        # player_stack = HorizontalStack([player_avatar, player_id], padding=0)
+        #
+        #
+        # # mustard_avatar = ImageElement(name="amongus_mustard")
+        # # mustard_id = TextElement(text=f"Colonel Mustard",
+        # #                          size=16,
+        # #                          primary_color=Pico.from_character(Character.MUSTARD))
+        # # player_2 = HorizontalStack([mustard_avatar, mustard_id], padding=0)
+        #
+        # stack = VerticalStack([player_stack], alignment=clueless.client.ui_enums.Alignment.LEFT, padding=10)
+        # stack.set_top_left((1000 - stack.rectangle.width, 1000 - stack.rectangle.height))
+        # self.add_element(stack)
 
 
 class GameView(View):
@@ -149,7 +167,9 @@ class GameView(View):
 class ActionView(View):
     HORIZONTAL_PADDING = 15
     VERTICAL_PADDING = 5
-    BOX_PADDING = 100
+    ACTION_BOX_SIZE = (400, 1000)
+    BOX_PADDING = 10
+    MENU_PADDING = 50
     MAX_LEVELS = 4
 
     class Delegate(Protocol):
@@ -178,20 +198,33 @@ class ActionView(View):
         self.__setup_elements()
 
     def __setup_elements(self):
-        button_width = (self.screen.get_width() - (
-                self.HORIZONTAL_PADDING * (self.MAX_LEVELS - 1)) - (self.BOX_PADDING * 2)) // self.MAX_LEVELS
+        button_width = (self.screen.get_width()
+                        - (self.HORIZONTAL_PADDING * (self.MAX_LEVELS - 1))
+                        - (self.MENU_PADDING * 2)) // self.MAX_LEVELS
         button_height = 24  # TODO: fixed
         self.button_dimensions = pygame.Rect((0, 0), (button_width, button_height))
         dialog, button_stack = self.__generate_next_menu_level()
         first_level_button_stack = VerticalStack(elements=button_stack, padding=self.VERTICAL_PADDING)
         self.levels.append(button_stack)
+
+        box_y = self.screen.get_height() - self.ACTION_BOX_SIZE[0]
+
+        rectangle = pygame.Rect(
+            self.BOX_PADDING,
+            box_y + self.BOX_PADDING,
+            self.screen.get_width() - (self.BOX_PADDING * 2),
+            self.ACTION_BOX_SIZE[0] - (self.BOX_PADDING * 2)
+        )
+        action_box = ViewBox(rectangle, self.screen)
         self.menu_dialog = TextElement(dialog)
-        self.menu_dialog.set_center((500, 600 + (self.menu_dialog.rectangle.height // 2)))
+        self.menu_dialog.set_center(
+            (self.screen.get_width() // 2, box_y + (self.menu_dialog.rectangle.height // 2) + self.MENU_PADDING))
         self.menu = HorizontalStack([first_level_button_stack], alignment=clueless.client.ui_enums.Alignment.TOP,
                                     padding=self.HORIZONTAL_PADDING)
-        self.menu.set_top_left((self.BOX_PADDING, self.menu_dialog.rectangle.bottom + self.VERTICAL_PADDING))
+        self.menu.set_top_left((self.MENU_PADDING, self.menu_dialog.rectangle.bottom + self.VERTICAL_PADDING))
         self.add_element(self.menu_dialog)
         self.add_element(self.menu)
+        self.add_element(action_box)
 
     def __generate_next_menu_level(self) -> (str, list[PayloadButton]):
         button_list = []
@@ -307,46 +340,15 @@ class ActionView(View):
     #     stack.set_center((500, 850))
     #     self.add_element(stack)
 
-    # # Transition to accuse part of action view - start with characters
-    # def transition_accuse(self):
-    #     for element in self.elements:
-    #         if isinstance(element, Stack) or isinstance(element, TextElement):
-    #             self.del_element(element)
-    #
-    #     button_list = []
-    #     choose_character = TextElement("Please select a character to accuse: ")
-    #     choose_character.set_center((500, 775))
-    #     self.add_element(choose_character)
-    #
-    #     pos = pygame.Rect((0, 0), (100, 30))
-    #     for character in Character:
-    #         button_list.append(
-    #             CharacterButton(character=character, button=pygame_gui.elements.UIButton(relative_rect=pos,
-    #                                                                                      text=character.value,
-    #                                                                                      manager=self.ui_manager,
-    #                                                                                      visible=True),
-    #                             on_click=self.did_accuse_character))
-    #     stack = HorizontalStack(button_list, padding=15)
-    #     stack.set_center((500, 850))
-    #     self.add_element(stack)
-    #
-    #
-    #
-    #
-    #
-    # ##################################
-    # #              END TURN          #
-    # ##################################
-    # def transition_end_turn(self):
-    #     for element in self.elements:
-    #         if isinstance(element, Stack) or isinstance(element, TextElement):
-    #             self.del_element(element)
-    #     turn_over_text = TextElement("TURN OVER")
-    #     turn_over_text.set_center((500, 850))
-    #     self.add_element(turn_over_text)
-
 
 class DisproveView(View):
+    HORIZONTAL_PADDING = 15
+    VERTICAL_PADDING = 5
+    ACTION_BOX_SIZE = (400, 1000)
+    BOX_PADDING = 10
+    MENU_PADDING = 50
+    MAX_LEVELS = 4
+
     class Delegate(Protocol):
         def did_disprove(self, card: Card, suggest: Suggest):
             pass
@@ -357,34 +359,69 @@ class DisproveView(View):
         super().__init__(screen, ui_manager)
         self.delegate = delegate
         self.suggest = suggest
-        rectangle = pygame.Rect(.5, 750, 1000, 249)
-        action_box = ViewBox(rectangle, screen)
+
+        button_width = (self.screen.get_width()
+                        - (self.HORIZONTAL_PADDING * (self.MAX_LEVELS - 1))
+                        - (self.MENU_PADDING * 2)) // self.MAX_LEVELS
+        button_height = 24  # TODO: fixed
+        self.button_dimensions = pygame.Rect((0, 0), (button_width, button_height))
+
+        box_y = self.screen.get_height() - self.ACTION_BOX_SIZE[0]
+
+        rectangle = pygame.Rect(
+            self.BOX_PADDING,
+            box_y + self.BOX_PADDING,
+            self.screen.get_width() - (self.BOX_PADDING * 2),
+            self.ACTION_BOX_SIZE[0] - (self.BOX_PADDING * 2)
+        )
+        action_box = ViewBox(rectangle, self.screen)
+
+        menu_dialog = TextElement("Please select a card to disprove: ")
+
+        button_list_character = []
+        button_list_weapon = []
+        button_list_location = []
+        for card in disproving_cards:
+            if card.card_type == CardType.CHARACTER:
+                button_list_character.append(PayloadButton.card_button(card=card,
+                                                                       button=pygame_gui.elements.UIButton(
+                                                                           relative_rect=self.button_dimensions,
+                                                                           text=card.card_value,
+                                                                           manager=self.ui_manager,
+                                                                           visible=True),
+                                                                       on_click=lambda x: self.delegate.did_disprove(x,
+                                                                                                                     suggest)))
+            elif card.card_type == CardType.WEAPON:
+                button_list_weapon.append(PayloadButton.card_button(card=card,
+                                                                    button=pygame_gui.elements.UIButton(
+                                                                        relative_rect=self.button_dimensions,
+                                                                        text=card.card_value,
+                                                                        manager=self.ui_manager,
+                                                                        visible=True),
+                                                                    on_click=lambda x: self.delegate.did_disprove(x,
+                                                                                                                  suggest)))
+            elif card.card_type == CardType.LOCATION:
+                button_list_location.append(PayloadButton.card_button(card=card,
+                                                                      button=pygame_gui.elements.UIButton(
+                                                                          relative_rect=self.button_dimensions,
+                                                                          text=card.card_value,
+                                                                          manager=self.ui_manager,
+                                                                          visible=True),
+                                                                      on_click=lambda x: self.delegate.did_disprove(x,
+                                                                                                                    suggest)))
+        v_stack_character = VerticalStack(button_list_character, clueless.client.ui_enums.Alignment.TOP,
+                                          padding=self.VERTICAL_PADDING)
+        v_stack_weapon = VerticalStack(button_list_weapon, clueless.client.ui_enums.Alignment.TOP,
+                                       padding=self.VERTICAL_PADDING)
+        v_stack_location = VerticalStack(button_list_location, clueless.client.ui_enums.Alignment.TOP,
+                                         padding=self.VERTICAL_PADDING)
+
+        h_stack = HorizontalStack([v_stack_character, v_stack_weapon, v_stack_location],
+                                  alignment=clueless.client.ui_enums.Alignment.TOP,
+                                  padding=self.VERTICAL_PADDING)
+        h_stack.set_top_left((self.MENU_PADDING, menu_dialog.rectangle.bottom + self.VERTICAL_PADDING))
+        h_stack.set_center((self.screen.get_width() // 2, box_y + (h_stack.rectangle.height // 2) + 100))
+        menu_dialog.set_center((self.screen.get_width() // 2, box_y + (menu_dialog.rectangle.height // 2)))
+        self.add_element(h_stack)
         self.add_element(action_box)
-
-        for element in self.elements:
-            if isinstance(element, Stack) or isinstance(element, TextElement):
-                self.del_element(element)
-        button_list = []
-
-        choose_disproving_suggestion = TextElement("Please select a card to disprove with: ")
-        choose_disproving_suggestion.set_center((500, 775))
-        self.add_element(choose_disproving_suggestion)
-
-        pos = pygame.Rect((0, 0), (100, 30))
-        if not disproving_cards:
-            button_list.append(CardButton(card=None, button=pygame_gui.elements.UIButton(relative_rect=pos,
-                                                                                         text=f"None",
-                                                                                         manager=self.ui_manager,
-                                                                                         visible=True),
-                                          on_click=lambda x: self.delegate.did_disprove(Card, suggest)))
-        else:
-            for card in disproving_cards:
-                button_list.append(CardButton(card=card, button=pygame_gui.elements.UIButton(relative_rect=pos,
-                                                                                             text=f"{card.card_value}",
-                                                                                             manager=self.ui_manager,
-                                                                                             visible=True),
-                                              on_click=lambda x: self.delegate.did_disprove(card, suggest)))
-
-        stack = HorizontalStack(button_list, padding=15)
-        stack.set_center((500, 850))
-        self.add_element(stack)
+        self.add_element(menu_dialog)
