@@ -64,6 +64,7 @@ class TitleView(View):
     HIGHLIGHT_COLOR = Color(200, 0, 0)
     DEFAULT_COLOR = Color(255, 0, 0)
     DEFAULT_BUTTON_SIZE = (200, 30)
+    DEFAULT_IMAGE_SIZE = (50, 50)
 
     class Delegate(Protocol):
         def did_set_nickname(self, nickname: str):
@@ -117,36 +118,16 @@ class TitleView(View):
 
         player_list = []
         for player in players:
-            player_avatar = ImageElement(name=f"amongus_{player.character}")
+            player_avatar = ImageElement(name=f"amongus_{player.character}", size=self.DEFAULT_IMAGE_SIZE)
             player_id = TextElement(text=f"{player.nickname}({player.character})",
                                     size=16,
                                     primary_color=Pico.from_character(player.character))
             player_stack = HorizontalStack([player_avatar, player_id], padding=0)
             player_list.append(player_stack)
 
-
         stack = VerticalStack(player_list, alignment=clueless.client.ui_enums.Alignment.LEFT, padding=10)
         stack.set_top_left((1000 - stack.rectangle.width, 1000 - stack.rectangle.height))
         self.add_element(stack)
-
-
-
-        # player_avatar = ImageElement(name="amongus_scarlet")
-        # player_id = TextElement(text=f"{player_id.nickname}({player_id.character})",
-        #                         size=16,
-        #                         primary_color=Pico.from_character(player_id.character))
-        # player_stack = HorizontalStack([player_avatar, player_id], padding=0)
-        #
-        #
-        # # mustard_avatar = ImageElement(name="amongus_mustard")
-        # # mustard_id = TextElement(text=f"Colonel Mustard",
-        # #                          size=16,
-        # #                          primary_color=Pico.from_character(Character.MUSTARD))
-        # # player_2 = HorizontalStack([mustard_avatar, mustard_id], padding=0)
-        #
-        # stack = VerticalStack([player_stack], alignment=clueless.client.ui_enums.Alignment.LEFT, padding=10)
-        # stack.set_top_left((1000 - stack.rectangle.width, 1000 - stack.rectangle.height))
-        # self.add_element(stack)
 
 
 class GameView(View):
@@ -162,8 +143,6 @@ class GameView(View):
         self.add_element(self.game_started)
 
 
-# class BoardView(View):
-#     class Delegate(Protocol):
 class ActionView(View):
     HORIZONTAL_PADDING = 15
     VERTICAL_PADDING = 5
@@ -171,6 +150,8 @@ class ActionView(View):
     BOX_PADDING = 10
     MENU_PADDING = 50
     MAX_LEVELS = 4
+
+    BOARD_SIZE = (150, 150 )
 
     class Delegate(Protocol):
         def did_move(self, direction: (Direction, (int, int))):
@@ -196,6 +177,7 @@ class ActionView(View):
         self.current_selection = []
         self.levels: list[list[PayloadButton]] = []
         self.__setup_elements()
+        self.__show_board()
 
     def __setup_elements(self):
         button_width = (self.screen.get_width()
@@ -318,27 +300,23 @@ class ActionView(View):
             )
         return button_list
 
-    # def transition_disprove(self, disproving_cards: [Card]):
-    #     for element in self.elements:
-    #         if isinstance(element, Stack) or isinstance(element, TextElement):
-    #             self.del_element(element)
-    #     button_list = []
-    #
-    #     choose_disproving_suggestion = TextElement("Please select a card to disprove with: ")
-    #     choose_disproving_suggestion.set_center((500, 775))
-    #     self.add_element(choose_disproving_suggestion)
-    #
-    #     pos = pygame.Rect((0, 0), (100, 30))
-    #     for card in disproving_cards:
-    #         button_list.append(CardButton(card=card, button=pygame_gui.elements.UIButton(relative_rect=pos,
-    #                                                                                      text=f"{card.type}.{card.value}",
-    #                                                                                      manager=self.ui_manager,
-    #                                                                                      visible=True),
-    #                                       on_click=self.delegate.did_disprove))
-    #
-    #     stack = HorizontalStack(button_list, padding=15)
-    #     stack.set_center((500, 850))
-    #     self.add_element(stack)
+    def __show_board(self):
+        count = 0
+        rooms = []
+        board = []
+        for location in Location:
+            room = ImageElement(name=f"{location.value}", size= self.BOARD_SIZE)
+            rooms.append(room)
+            count = count + 1
+            if count == 3:
+                count = 0
+                board.append(
+                    HorizontalStack(elements=rooms.copy(), alignment=clueless.client.ui_enums.Alignment.CENTER, padding=100))
+                rooms.clear()
+        v_stack = VerticalStack(elements=board, alignment=clueless.client.ui_enums.Alignment.CENTER, padding=50)
+        v_stack.set_top_left((0,0))
+        v_stack.set_center((500, 300))
+        self.add_element(v_stack)
 
 
 class DisproveView(View):

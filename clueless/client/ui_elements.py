@@ -219,12 +219,12 @@ class TextElement(Element, Clickable, Hoverable):
 
 
 class ImageElement(Element):
-    def __init__(self, name):
+    def __init__(self, name, size):
         image = pygame.image.load(f'../resources/{name}.png').convert_alpha()
-        DEFAULT_IMAGE_SIZE = (50, 50)
         # Scale the image to your needed size
-        scaled_image = pygame.transform.smoothscale(image, DEFAULT_IMAGE_SIZE)
+        scaled_image = pygame.transform.smoothscale(image, size)
         super().__init__(scaled_image, scaled_image.get_rect(), is_managed=False)
+
 
 
 class ViewBox(Element):
