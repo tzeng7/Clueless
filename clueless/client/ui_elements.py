@@ -43,6 +43,10 @@ class Element(Protocol):
         top_left = (center[0] - (self.rectangle.width // 2), center[1] - (self.rectangle.height // 2))
         self.set_top_left(top_left)
 
+    def set_bottom_right(self, bottom_right: (int, int)):
+        top_left = (bottom_right[0] - self.rectangle.width, bottom_right[1] - self.rectangle.height)
+        self.set_top_left(top_left)
+
     def draw_onto(self, screen: pygame.Surface):
         if self.is_hidden:
             return
@@ -238,12 +242,23 @@ class ViewBox(Element):
 class Stack(Element):
 
     def __init__(self, elements: list[Element], axis: int, alignment: Alignment, padding: int):
-        self.elements = elements
+        self.__elements = elements
         self.axis = axis
         self.alignment = alignment
         self.padding = padding
         super().__init__(elements, self.__calculate_total_rect(), is_managed=False)
         self.set_top_left((0, 0))
+
+    @property
+    def elements(self):
+        return self.__elements
+
+    @elements.setter
+    def elements(self, elements):
+        self.__elements = elements
+        old_position = self.rectangle.topleft
+        self._rectangle = self.__calculate_total_rect()
+        self.set_top_left(top_left=old_position)
 
     def hide(self):
         for element in self.elements:

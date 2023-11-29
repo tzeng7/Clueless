@@ -143,7 +143,10 @@ class GameClient(TitleView.Delegate):
         action_view: ActionView = self.view
 
     def handle_msg_ClientAction_disprove(self, disprove: Disprove):
-        print(f"The disproving card is {disprove.card.card_value}")
+        if not disprove.card:
+            print("No card to disprove.")
+        else:
+            print(f"The disproving card is {disprove.card.card_value}")
         if disprove.suggest.player_id == self.player.player_id:
             self.transition(ActionView(self.screen, self.ui_manager, self, self.game_manager))
 

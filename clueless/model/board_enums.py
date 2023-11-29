@@ -63,6 +63,22 @@ class Character(Enum):
         return char_to_position[self]
 
     @property
+    def file_name(self):
+        match self:
+            case self.SCARLET:
+                return "miss_scarlet_2"
+            case self.PLUM:
+                return "prof_plum_2"
+            case self.MUSTARD:
+                return "colenel_mustard_2"
+            case self.WHITE:
+                return "mrs_white_2"
+            case self.GREEN:
+                return "ms_peacock_2"
+            case self.PEACOCK:
+                return "prof_plum_2"
+
+    @property
     def ordinal_value(self):
         return list(Character).index(self)
 
