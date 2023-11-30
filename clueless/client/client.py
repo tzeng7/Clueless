@@ -7,7 +7,7 @@ from typing import cast
 from clueless.client.client_game_manager import ClientGameManager
 from clueless.client.client_player import ClientPlayer
 from clueless.client.connection import GameConnection
-from clueless.client.view import TitleView, View, GameView, DisproveView
+from clueless.client.view import TitleView, View, GameView
 from clueless.messages.messages import AssignPlayerID, UpdatePlayers, StartGame, Move, DealCards, YourTurn, Suggest, \
     RequestDisprove, Disprove, EndTurn, Accuse
 from clueless.model.board import Room
@@ -140,20 +140,28 @@ class GameClient(TitleView.Delegate):
             game_view.show_actions()
 
     def handle_msg_ClientAction_suggest(self, suggest: Suggest):
+        self.game_manager.handle_suggestion(suggest)
+        game_view: GameView = self.view
+
+        game_view.update_board_elements(self.game_manager.board)
         if self.player.player_id == suggest.player_id:
             self.game_manager.suggest(suggest.suggestion)
+
 
     def handle_msg_request_disprove(self, request_disprove: RequestDisprove):
         print("Received Request Disprove")
         print(request_disprove.suggest.suggestion)
         disproving_cards = self.game_manager.disproving_cards(request_disprove.suggest)
-        self.transition(DisproveView(self.screen, self.ui_manager, self, disproving_cards, request_disprove.suggest))
+        game_view: GameView = self.view
+        game_view.show_disprove(disproving_cards, request_disprove.suggest)
 
     def handle_msg_ClientAction_disprove(self, disprove: Disprove):
         if not disprove.card:
             print("No card to disprove.")
         else:
             print(f"The disproving card is {disprove.card.card_value}")
+
+
         if disprove.suggest.player_id == self.player.player_id:
             game_view: GameView = self.view
             game_view.show_actions()

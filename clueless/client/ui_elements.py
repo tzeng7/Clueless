@@ -163,8 +163,8 @@ class PayloadButton(ManagedButton):
         return PayloadButton(location, button, on_click)
 
     @classmethod
-    def card_button(self, card: Card, button: pygame_gui.elements.UIButton,
-                    on_click: Callable[[Card], None]):
+    def card_button(self, card: Card | None, button: pygame_gui.elements.UIButton,
+                    on_click: Callable[[Card | None], None]):
         return PayloadButton(card, button, on_click)
 
 

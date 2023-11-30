@@ -55,3 +55,5 @@
   - ability to draw board model and tokens on the board
 - Action Box
   - ability to deselect or cancel
+- Disprove
+  - show menu dialog for which card was sent to suggester

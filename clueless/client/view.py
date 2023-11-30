@@ -142,7 +142,7 @@ class GameView(View):
         def did_suggest(self, character: Character, weapon: Weapon):
             pass
 
-        def did_disprove(self, card: Card):
+        def did_disprove(self, card: Card | None, suggest: Suggest):
             pass
 
         def did_accuse(self, character: Character, weapon: Weapon, location: Location):
@@ -310,65 +310,25 @@ class GameView(View):
             center_y = self.BOARD_OFFSETS[new_position[0]] * self.BOARD_SIZE[1]
             image_element.set_center((self.BOARD_TOP_LEFT[0] + center_x, self.BOARD_TOP_LEFT[1] + center_y))
 
-
-
-class DisproveView(View):
-    HORIZONTAL_PADDING = 15
-    VERTICAL_PADDING = 5
-    ACTION_BOX_SIZE = (400, 1000)
-    BOX_PADDING = 10
-    MENU_PADDING = 50
-    MAX_LEVELS = 4
-
-    class Delegate(Protocol):
-        def did_disprove(self, card: Card | None, suggest: Suggest):
-            pass
-
-    def __init__(self, screen: pygame.Surface, ui_manager: pygame_gui.UIManager, delegate: Delegate,
-                 disproving_cards: [Card], suggest: Suggest):
-
-        super().__init__(screen, ui_manager)
-        self.delegate = delegate
-        self.suggest = suggest
-
-        button_width = (self.screen.get_width()
-                        - (self.HORIZONTAL_PADDING * (self.MAX_LEVELS - 1))
-                        - (self.MENU_PADDING * 2)) // self.MAX_LEVELS
-        button_height = 24  # TODO: fixed
-        self.button_dimensions = pygame.Rect((0, 0), (button_width, button_height))
-
+    def show_disprove(self, disproving_cards: [Card], suggest: Suggest):
         box_y = self.screen.get_height() - self.ACTION_BOX_SIZE[0]
 
-        rectangle = pygame.Rect(
-            self.BOX_PADDING,
-            box_y + self.BOX_PADDING,
-            self.screen.get_width() - (self.BOX_PADDING * 2),
-            self.ACTION_BOX_SIZE[0] - (self.BOX_PADDING * 2)
-        )
-        action_box = ViewBox(rectangle, self.screen)
-
-        menu_dialog = TextElement("Please select a card to disprove: ")
-
-        menu_dialog.set_top_left((self.MENU_PADDING, menu_dialog.rectangle.bottom + self.VERTICAL_PADDING))
-        menu_dialog.set_center(
-            (self.screen.get_width() // 2, box_y + (menu_dialog.rectangle.height // 2) + self.MENU_PADDING))
-
-        self.add_element(action_box)
-        self.add_element(menu_dialog)
-
+        self.menu_dialog.text = "Please select a card to disprove: "
         button_list_character = []
         button_list_weapon = []
         button_list_location = []
 
-
         if not disproving_cards:
-            none_button = PayloadButton.card_button(card= None, button= pygame_gui.elements.UIButton(relative_rect=self.button_dimensions,
-                                                                             text="None",
-                                                                             manager=self.ui_manager,
-                                                                             visible=True),
-                                        on_click= lambda x: self.delegate.did_disprove(x, suggest))
-            none_button.set_top_left((self.MENU_PADDING, menu_dialog.rectangle.bottom + self.VERTICAL_PADDING))
-            self.add_element(none_button)
+            none_button = PayloadButton.card_button(card=None, button=pygame_gui.elements.UIButton(
+                relative_rect=self.button_dimensions,
+                text="None",
+                manager=self.ui_manager,
+                visible=True),
+                                                    on_click=lambda x: self.delegate.did_disprove(x, suggest))
+            one_button_stack = VerticalStack([none_button], clueless.client.ui_enums.Alignment.TOP,
+                          padding=self.VERTICAL_PADDING)
+
+            self.menu.add_element(one_button_stack)
         else:
             for card in disproving_cards:
                 if card.card_type == CardType.CHARACTER:
@@ -378,8 +338,9 @@ class DisproveView(View):
                                                                                text=card.card_value,
                                                                                manager=self.ui_manager,
                                                                                visible=True),
-                                                                           on_click=lambda x: self.delegate.did_disprove(x,
-                                                                                                                         suggest)))
+                                                                           on_click=lambda
+                                                                               x: self.__disprove_card_clicked(x,
+                                                                                                             suggest)))
                 elif card.card_type == CardType.WEAPON:
                     button_list_weapon.append(PayloadButton.card_button(card=card,
                                                                         button=pygame_gui.elements.UIButton(
@@ -387,8 +348,9 @@ class DisproveView(View):
                                                                             text=card.card_value,
                                                                             manager=self.ui_manager,
                                                                             visible=True),
-                                                                        on_click=lambda x: self.delegate.did_disprove(x,
-                                                                                                                      suggest)))
+                                                                        on_click=lambda x: self.__disprove_card_clicked(
+                                                                            x,
+                                                                            suggest)))
                 elif card.card_type == CardType.LOCATION:
                     button_list_location.append(PayloadButton.card_button(card=card,
                                                                           button=pygame_gui.elements.UIButton(
@@ -396,19 +358,23 @@ class DisproveView(View):
                                                                               text=card.card_value,
                                                                               manager=self.ui_manager,
                                                                               visible=True),
-                                                                          on_click=lambda x: self.delegate.did_disprove(x,
-                                                                                                                        suggest)))
+                                                                          on_click=lambda x: self.__disprove_card_clicked(
+                                                                              x,
+                                                                              suggest)))
             v_stack_character = VerticalStack(button_list_character, clueless.client.ui_enums.Alignment.TOP,
                                               padding=self.VERTICAL_PADDING)
             v_stack_weapon = VerticalStack(button_list_weapon, clueless.client.ui_enums.Alignment.TOP,
                                            padding=self.VERTICAL_PADDING)
             v_stack_location = VerticalStack(button_list_location, clueless.client.ui_enums.Alignment.TOP,
                                              padding=self.VERTICAL_PADDING)
+            self.menu.add_element(v_stack_character)
+            self.menu.add_element(v_stack_weapon)
+            self.menu.add_element(v_stack_location)
+            # h_stack.set_top_left((self.MENU_PADDING, self.menu_dialog.rectangle.bottom + self.VERTICAL_PADDING))
+            # h_stack.set_center((self.screen.get_width() // 2, box_y + (h_stack.rectangle.height // 2) + 100))
+            # self.add_element(h_stack)
 
-            h_stack = HorizontalStack([v_stack_character, v_stack_weapon, v_stack_location],
-                                      alignment=clueless.client.ui_enums.Alignment.TOP,
-                                      padding=self.VERTICAL_PADDING)
-            h_stack.set_top_left((self.MENU_PADDING, menu_dialog.rectangle.bottom + self.VERTICAL_PADDING))
-            h_stack.set_center((self.screen.get_width() // 2, box_y + (h_stack.rectangle.height // 2) + 100))
-            self.add_element(h_stack)
-
+    def __disprove_card_clicked(self, payload: Card | None, suggest: Suggest):
+        self.menu_dialog.text = "Waiting for turn"
+        self.menu.clear()
+        self.delegate.did_disprove(payload, suggest)
