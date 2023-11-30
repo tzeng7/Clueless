@@ -260,6 +260,11 @@ class Stack(Element):
         self._rectangle = self.__calculate_total_rect()
         self.set_top_left(top_left=old_position)
 
+    def clear(self):
+        for element in self.elements:
+            element.kill()
+        self.elements = []
+
     def hide(self):
         for element in self.elements:
             element.hide()

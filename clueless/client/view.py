@@ -12,12 +12,13 @@ from clueless.client.ui_elements import Element, TextInputElement, TextElement, 
     ImageElement, HorizontalStack, VerticalStack, ViewBox, \
     Stack, ManagedElement, PayloadButton
 from clueless.messages.messages import BaseClientAction, Move, Suggest
+from clueless.model.board import Board
 from clueless.model.board_enums import Character, ActionType, Direction, Weapon, Location, CardType
 from clueless.model.card import Card
 from clueless.model.player import PlayerID
 
-
 class View(Protocol):
+    SCREEN_SIZE = (1000, 1000)
 
     def __init__(self, screen: Surface, ui_manager: pygame_gui.UIManager):
         self.screen = screen
@@ -91,17 +92,8 @@ class TitleView(View):
         self.add_element(text_input)
 
         self.lobby_stack = VerticalStack([], alignment=clueless.client.ui_enums.Alignment.LEFT, padding=10)
-        self.lobby_stack.set_bottom_right((1000, 1000))
+        self.lobby_stack.set_bottom_right(View.SCREEN_SIZE)
         self.add_element(self.lobby_stack)
-        # self.subtitle_text = TextElement(text="READY",
-        #                                  size=24,
-        #                                  primary_color=Color(255, 0, 0),
-        #                                  highlight_color=Color(255, 153, 153),
-        #                                  on_mouse_down=delegate.did_ready)
-        # self.subtitle_text.set_center(
-        #     (screen.get_rect().width // 2, self.title_text.rectangle.bottom + (self.subtitle_text.rectangle.height // 2))
-        # )
-        # self.add_element(self.subtitle_text)
 
     def transition_to_ready_button(self):
         for element in self.elements:
@@ -129,25 +121,10 @@ class TitleView(View):
             player_stack = HorizontalStack([player_avatar, player_id], padding=0)
             player_list.append(player_stack)
         self.lobby_stack.elements = player_list
-        self.lobby_stack.set_bottom_right((1000, 1000))
-
-
+        self.lobby_stack.set_bottom_right(self.SCREEN_SIZE)
 
 
 class GameView(View):
-    class Delegate(Protocol):
-        hi = "hi"
-
-    def __init__(self, screen: pygame.Surface, ui_manager: pygame_gui.UIManager, delegate: Delegate):
-        super().__init__(screen, ui_manager)
-        self.delegate = delegate
-
-        self.game_started = TextElement(text="GAME STARTED!", primary_color=Color(0, 0, 255))
-        self.game_started.set_center((screen.get_rect().width // 2, (screen.get_rect().height // 2) - 50))
-        self.add_element(self.game_started)
-
-
-class ActionView(View):
     HORIZONTAL_PADDING = 15
     VERTICAL_PADDING = 5
     ACTION_BOX_SIZE = (400, 1000)
@@ -155,7 +132,8 @@ class ActionView(View):
     MENU_PADDING = 50
     MAX_LEVELS = 4
 
-    BOARD_SIZE = (150, 150 )
+    BOARD_SIZE = (600, 600)
+    BOARD_TOP_LEFT = (200, 0)
 
     class Delegate(Protocol):
         def did_move(self, direction: (Direction, (int, int))):
@@ -181,7 +159,6 @@ class ActionView(View):
         self.current_selection = []
         self.levels: list[list[PayloadButton]] = []
         self.__setup_elements()
-        self.__show_board()
 
     def __setup_elements(self):
         button_width = (self.screen.get_width()
@@ -189,9 +166,7 @@ class ActionView(View):
                         - (self.MENU_PADDING * 2)) // self.MAX_LEVELS
         button_height = 24  # TODO: fixed
         self.button_dimensions = pygame.Rect((0, 0), (button_width, button_height))
-        dialog, button_stack = self.__generate_next_menu_level()
-        first_level_button_stack = VerticalStack(elements=button_stack, padding=self.VERTICAL_PADDING)
-        self.levels.append(button_stack)
+
 
         box_y = self.screen.get_height() - self.ACTION_BOX_SIZE[0]
 
@@ -202,15 +177,27 @@ class ActionView(View):
             self.ACTION_BOX_SIZE[0] - (self.BOX_PADDING * 2)
         )
         action_box = ViewBox(rectangle, self.screen)
-        self.menu_dialog = TextElement(dialog)
+        self.menu_dialog = TextElement("Waiting for turn")
         self.menu_dialog.set_center(
             (self.screen.get_width() // 2, box_y + (self.menu_dialog.rectangle.height // 2) + self.MENU_PADDING))
-        self.menu = HorizontalStack([first_level_button_stack], alignment=clueless.client.ui_enums.Alignment.TOP,
+        self.menu = HorizontalStack([], alignment=clueless.client.ui_enums.Alignment.TOP,
                                     padding=self.HORIZONTAL_PADDING)
         self.menu.set_top_left((self.MENU_PADDING, self.menu_dialog.rectangle.bottom + self.VERTICAL_PADDING))
+
+        board = ImageElement("GameBoardV1", self.BOARD_SIZE)
+        board.set_top_left(self.BOARD_TOP_LEFT)
+        self.board_elements: dict[PlayerID, ImageElement] = {}
+        self.add_element(board)
         self.add_element(self.menu_dialog)
         self.add_element(self.menu)
         self.add_element(action_box)
+
+    def show_actions(self):
+        dialog, button_stack = self.__generate_next_menu_level()
+        next_button_stack = VerticalStack(elements=button_stack, padding=self.VERTICAL_PADDING)
+        self.levels.append(button_stack)
+        self.menu.add_element(next_button_stack)
+        self.menu_dialog.text = dialog
 
     def __generate_next_menu_level(self) -> (str, list[PayloadButton]):
         button_list = []
@@ -273,6 +260,8 @@ class ActionView(View):
                                              self.current_selection[3])
                 case ActionType.END_TURN:
                     self.delegate.did_end_turn()
+            self.current_selection.clear()
+            self.menu.clear()
 
     def __make_direction_buttons(self, directions: list[(Direction, (int, int))]) -> list[PayloadButton]:
         # for element in self.elements:
@@ -304,25 +293,23 @@ class ActionView(View):
             )
         return button_list
 
-    def __show_board(self):
-        count = 0
-        rooms = []
-        board = []
-        for location in Location:
-            room = ImageElement(name=f"{location.value}", size= self.BOARD_SIZE)
-            rooms.append(room)
-            count = count + 1
-            if count == 3:
-                count = 0
-                board.append(
-                    HorizontalStack(elements=rooms.copy(), alignment=clueless.client.ui_enums.Alignment.CENTER, padding=100))
-                rooms.clear()
-        v_stack = VerticalStack(elements=board, alignment=clueless.client.ui_enums.Alignment.CENTER, padding=50)
-        v_stack.set_top_left((0,0))
-        v_stack.set_center((500, 300))
-        self.add_element(v_stack)
 
-    
+    BOARD_OFFSETS = [0.12, 0.31, 0.5, 0.69, 0.88] * View.SCREEN_SIZE[0]
+    def update_board_elements(self, board_model: Board):
+        # TODO: handle overlap
+        for player_id, player_token in board_model.player_tokens.items():
+            image_element: ImageElement
+            if player_id in self.board_elements:
+                image_element = self.board_elements[player_id]
+            else:
+                image_element = ImageElement(player_id.character.file_name, (50, 50))
+                self.add_element(image_element)
+                self.board_elements[player_id] = image_element
+            new_position = player_token.position
+            center_x = self.BOARD_OFFSETS[new_position[1]] * self.BOARD_SIZE[0]
+            center_y = self.BOARD_OFFSETS[new_position[0]] * self.BOARD_SIZE[1]
+            image_element.set_center((self.BOARD_TOP_LEFT[0] + center_x, self.BOARD_TOP_LEFT[1] + center_y))
+
 
 
 class DisproveView(View):

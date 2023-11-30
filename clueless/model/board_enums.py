@@ -70,13 +70,13 @@ class Character(Enum):
             case self.PLUM:
                 return "prof_plum_2"
             case self.MUSTARD:
-                return "colenel_mustard_2"
+                return "colonel_mustard_2"
             case self.WHITE:
                 return "mrs_white_2"
             case self.GREEN:
-                return "ms_peacock_2"
+                return "mr_green_2"
             case self.PEACOCK:
-                return "prof_plum_2"
+                return "ms_peacock_2"
 
     @property
     def ordinal_value(self):

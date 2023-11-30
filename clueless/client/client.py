@@ -7,18 +7,18 @@ from typing import cast
 from clueless.client.client_game_manager import ClientGameManager
 from clueless.client.client_player import ClientPlayer
 from clueless.client.connection import GameConnection
-from clueless.client.view import TitleView, View, GameView, ActionView, DisproveView
+from clueless.client.view import TitleView, View, GameView, DisproveView
 from clueless.messages.messages import AssignPlayerID, UpdatePlayers, StartGame, Move, DealCards, YourTurn, Suggest, \
     RequestDisprove, Disprove, EndTurn, Accuse
 from clueless.model.board import Room
-from clueless.model.board_enums import ActionType, Direction, Character, Weapon, Location
+from clueless.model.board_enums import Direction, Character, Weapon, Location
 from clueless.model.card import Card
 
 
 class GameClient(TitleView.Delegate):
     def __init__(self):
         pygame.init()
-        width, height = 1000, 1000
+        width, height = View.SCREEN_SIZE
         self.screen: pygame.Surface = pygame.display.set_mode((width, height))
         pygame.display.set_caption("Clueless")
         self.ui_manager = pygame_gui.UIManager((self.screen.get_rect().width, self.screen.get_rect().height))
@@ -73,13 +73,13 @@ class GameClient(TitleView.Delegate):
 
     # ActionView.Delegate
     def did_move(self, movement_option: (Direction, (int, int))):
-        if type(self.view) is not ActionView:
-            print("Error: received movement selection but no longer showing action view")
+        if type(self.view) is not GameView:
+            print("Error: received movement selection but no longer showing game view")
         self.connection.Send(self.game_manager.move(movement_option[1]))
 
     def did_suggest(self, character: Character, weapon: Weapon):
-        if type(self.view) is not ActionView:
-            print("Error: received suggestion selection but no longer showing action view")
+        if type(self.view) is not GameView:
+            print("Error: received suggestion selection but no longer showing game view")
         print(f"Suggested: {character}, {weapon}")
         space = self.game_manager.board.get_player_space(self.player.player_id)
         location = cast(Room, space).room_type
@@ -110,13 +110,20 @@ class GameClient(TitleView.Delegate):
         if type(self.view) is not TitleView:
             print("Error: received StartGame but no longer showing title view")
         print("Received StartGame!")
-        self.transition(GameView(self.screen, self.ui_manager, self))
         self.game_manager = ClientGameManager(self.player, msg.board)
+        game_view = GameView(self.screen, self.ui_manager, self, self.game_manager)
+        self.transition(game_view)
+        game_view.update_board_elements(msg.board)
 
     def handle_msg_start_turn(self, msg: YourTurn):
         print("Received Start Turn!")
+        if type(self.view) is not GameView:
+            print("Error: received StartTurn but not showing game view")
+
         self.game_manager.start_turn(msg.turn_id)
-        self.transition(ActionView(self.screen, self.ui_manager, self, self.game_manager))
+        game_view: GameView = self.view
+        game_view.show_actions()
+
 
     def handle_msg_deal_cards(self, msg: DealCards):
         print("TODO: Received DealCards!")
@@ -125,10 +132,12 @@ class GameClient(TitleView.Delegate):
 
     def handle_msg_ClientAction_move(self, msg: Move):
         print("Received Move!")
+        game_view: GameView = self.view
         self.game_manager.board.move(msg.player_id, msg.position)
         print(self.game_manager.board)
+        game_view.update_board_elements(self.game_manager.board)
         if msg.player_id == self.player.player_id:
-            self.transition(ActionView(self.screen, self.ui_manager, self, self.game_manager))
+            game_view.show_actions()
 
     def handle_msg_ClientAction_suggest(self, suggest: Suggest):
         if self.player.player_id == suggest.player_id:
@@ -140,15 +149,14 @@ class GameClient(TitleView.Delegate):
         disproving_cards = self.game_manager.disproving_cards(request_disprove.suggest)
         self.transition(DisproveView(self.screen, self.ui_manager, self, disproving_cards, request_disprove.suggest))
 
-        action_view: ActionView = self.view
-
     def handle_msg_ClientAction_disprove(self, disprove: Disprove):
         if not disprove.card:
             print("No card to disprove.")
         else:
             print(f"The disproving card is {disprove.card.card_value}")
         if disprove.suggest.player_id == self.player.player_id:
-            self.transition(ActionView(self.screen, self.ui_manager, self, self.game_manager))
+            game_view: GameView = self.view
+            game_view.show_actions()
 
     def handle_msg_ClientAction_accuse(self, accuse: Accuse):
         print(f"The accusation is {accuse.accusation[0], accuse.accusation[1], accuse.accusation[2]}")
