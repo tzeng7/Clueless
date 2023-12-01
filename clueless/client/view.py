@@ -1,21 +1,22 @@
 from enum import Enum
 from typing import Protocol, Type
 
-import pygame_gui
 import pygame
-from pygame import Surface, SurfaceType, Color
+import pygame_gui
+from pygame import Surface, Color
 
 import clueless.client.ui_enums
 from clueless.client.client_game_manager import ClientGameManager
-from clueless.client.ui_enums import Pico
 from clueless.client.ui_elements import Element, TextInputElement, TextElement, ManagedButton, \
     ImageElement, HorizontalStack, VerticalStack, ViewBox, \
-    Stack, ManagedElement, PayloadButton
-from clueless.messages.messages import BaseClientAction, Move, Suggest
+    PayloadButton
+from clueless.client.ui_enums import Pico
+from clueless.messages.messages import Suggest
 from clueless.model.board import Board
 from clueless.model.board_enums import Character, ActionType, Direction, Weapon, Location, CardType
 from clueless.model.card import Card
 from clueless.model.player import PlayerID
+
 
 class View(Protocol):
     SCREEN_SIZE = (1000, 1000)

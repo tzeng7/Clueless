@@ -2,7 +2,7 @@ from typing import Protocol, runtime_checkable, Callable
 
 import pygame
 import pygame_gui
-from pygame import Color, Surface
+from pygame import Color
 
 from clueless.client.ui_enums import Alignment
 from clueless.model.board_enums import ActionType, Direction, Character, Weapon, Location

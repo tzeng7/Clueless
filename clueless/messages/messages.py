@@ -3,7 +3,7 @@ import uuid
 from typing import Self
 
 from clueless.model.board import Board
-from clueless.model.board_enums import Direction, ActionType, Character, Weapon, Location
+from clueless.model.board_enums import ActionType, Character, Weapon, Location
 from clueless.model.card import Card
 from clueless.model.player import PlayerID
 

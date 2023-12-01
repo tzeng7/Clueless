@@ -98,7 +98,6 @@ class GameClient(TitleView.Delegate):
         if type(self.view) is not TitleView:
             print("Error: received AssignPlayerID but no longer showing title view")
         self.player = ClientPlayer(msg.player_id)
-        # self.view.add_player_id(msg.player_id)
 
     def handle_msg_update_players(self, msg: UpdatePlayers):
         if type(self.view) is not TitleView:
@@ -121,7 +120,7 @@ class GameClient(TitleView.Delegate):
             print("Error: received StartTurn but not showing game view")
 
         self.game_manager.start_turn(msg.turn_id)
-        game_view: GameView = self.view
+        game_view = cast(GameView, self.view)
         game_view.show_actions()
 
 
@@ -132,7 +131,7 @@ class GameClient(TitleView.Delegate):
 
     def handle_msg_ClientAction_move(self, msg: Move):
         print("Received Move!")
-        game_view: GameView = self.view
+        game_view = cast(GameView, self.view)
         self.game_manager.board.move(msg.player_id, msg.position)
         print(self.game_manager.board)
         game_view.update_board_elements(self.game_manager.board)
@@ -141,7 +140,7 @@ class GameClient(TitleView.Delegate):
 
     def handle_msg_ClientAction_suggest(self, suggest: Suggest):
         self.game_manager.handle_suggestion(suggest)
-        game_view: GameView = self.view
+        game_view = cast(GameView, self.view)
 
         game_view.update_board_elements(self.game_manager.board)
         if self.player.player_id == suggest.player_id:
@@ -152,7 +151,7 @@ class GameClient(TitleView.Delegate):
         print("Received Request Disprove")
         print(request_disprove.suggest.suggestion)
         disproving_cards = self.game_manager.disproving_cards(request_disprove.suggest)
-        game_view: GameView = self.view
+        game_view = cast(GameView, self.view)
         game_view.show_disprove(disproving_cards, request_disprove.suggest)
 
     def handle_msg_ClientAction_disprove(self, disprove: Disprove):
@@ -163,7 +162,7 @@ class GameClient(TitleView.Delegate):
 
 
         if disprove.suggest.player_id == self.player.player_id:
-            game_view: GameView = self.view
+            game_view = cast(GameView, self.view)
             game_view.show_actions()
 
     def handle_msg_ClientAction_accuse(self, accuse: Accuse):
