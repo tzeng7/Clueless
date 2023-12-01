@@ -16,6 +16,10 @@ from clueless.model.card import Card
 
 
 class GameClient(TitleView.Delegate):
+    # GameClient serves as the controller for the game.
+    # GameClient will handle all server messages that are added to the message queue.
+    # Has access to the View to update the pygame screen or transition to a new pygame screen.
+    # Will call the client game manager to handle game logic and what data to send to the server.
     def __init__(self):
         pygame.init()
         width, height = View.SCREEN_SIZE
@@ -58,26 +62,34 @@ class GameClient(TitleView.Delegate):
             else:
                 self.view.respond_to_event(event)
 
-    # TitleView.Delegate
+    ###############################################
+    ##########     TitleView.Delegate       #######
+    ###############################################
     def did_set_nickname(self, nickname: str):
+        # on_text_finished: text input element
         if type(self.view) is not TitleView:
             print("Error: received ready but no longer showing title view")
         self.connection.join_game(nickname=nickname)
         self.view.transition_to_ready_button()
 
     def did_ready(self):
+        # on_click: ready button
         if type(self.view) is not TitleView:
             print("Error: received ready but no longer showing title view")
         print("READY FROM DELEGATE!")
         self.connection.ready()
 
-    # ActionView.Delegate
+    ###############################################
+    ##########     GameView.Delegate       #######
+    ###############################################
     def did_move(self, movement_option: (Direction, (int, int))):
+        # on_click: action_button, direction_button
         if type(self.view) is not GameView:
             print("Error: received movement selection but no longer showing game view")
         self.connection.Send(self.game_manager.move(movement_option[1]))
 
     def did_suggest(self, character: Character, weapon: Weapon):
+        # on_click: action_button, character_button, weapon_button
         if type(self.view) is not GameView:
             print("Error: received suggestion selection but no longer showing game view")
         print(f"Suggested: {character}, {weapon}")
@@ -86,14 +98,22 @@ class GameClient(TitleView.Delegate):
         self.connection.Send(self.game_manager.suggest((character, weapon, location)))
 
     def did_accuse(self, character: Character, weapon: Weapon, location: Location):
+        # on_click: action_button, character_button, weapon_button, location_button
+        if type(self.view) is not GameView:
+            print("Error: received suggestion selection but no longer showing game view")
         self.connection.Send(self.game_manager.accuse((character, weapon, location)))
 
     def did_end_turn(self):
+        #on_click: action_button
         self.connection.Send(self.game_manager.end_turn())
 
     def did_disprove(self, card: Card, suggest: Suggest):
         self.connection.Send(self.game_manager.disprove(card, suggest))
 
+
+    #######################################
+    ###         SERVER MESSAGE          ###
+    #######################################
     def handle_msg_assign_player_id(self, msg: AssignPlayerID):
         if type(self.view) is not TitleView:
             print("Error: received AssignPlayerID but no longer showing title view")
@@ -123,7 +143,6 @@ class GameClient(TitleView.Delegate):
         game_view = cast(GameView, self.view)
         game_view.show_actions()
 
-
     def handle_msg_deal_cards(self, msg: DealCards):
         print("TODO: Received DealCards!")
         self.player.cards = msg.cards
@@ -146,7 +165,6 @@ class GameClient(TitleView.Delegate):
         if self.player.player_id == suggest.player_id:
             self.game_manager.suggest(suggest.suggestion)
 
-
     def handle_msg_request_disprove(self, request_disprove: RequestDisprove):
         print("Received Request Disprove")
         print(request_disprove.suggest.suggestion)
@@ -159,8 +177,6 @@ class GameClient(TitleView.Delegate):
             print("No card to disprove.")
         else:
             print(f"The disproving card is {disprove.card.card_value}")
-
-
         if disprove.suggest.player_id == self.player.player_id:
             game_view = cast(GameView, self.view)
             game_view.show_actions()

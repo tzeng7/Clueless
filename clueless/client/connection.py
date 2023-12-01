@@ -1,17 +1,19 @@
 import queue
+import time
 from typing import Type
 
 from PodSixNet.Connection import ConnectionListener, connection
-import time
 
-from clueless.messages.messages import JoinGame, Ready, UpdatePlayers, AssignPlayerID, DealCards, YourTurn, RequestDisprove, \
-    Disprove, BaseMessage, StartGame, Move, Suggest, Accuse, EndTurn, BaseClientAction
+from clueless.messages.messages import JoinGame, Ready, UpdatePlayers, AssignPlayerID, DealCards, YourTurn, \
+    RequestDisprove, \
+    Disprove, BaseMessage, StartGame, Move, Suggest, Accuse, BaseClientAction
 
 
 class GameConnection(ConnectionListener):
+    # Responsible for sending and receiving messages to and from the server.
+    # When receiving messages from the server, these messages will be added to the message queue
+    # which the game client will react to.
     def __init__(self, host, port, message_queue: queue.SimpleQueue):
-        # self.player: ClientPlayer = None
-        # self.game_manager: ClientGameManager = None
         self.Connect((host, port))
         self.message_queue = message_queue
         print("Connected to server")
@@ -44,7 +46,11 @@ class GameConnection(ConnectionListener):
     #######################################
     ### Network event/message callbacks ###
     #######################################
+
+
     def Network(self, data):
+        # Deserializes the server payload as a Message and adds Message to the message queue
+        # The message queue will be polled by the game client.
         msg_type: Type[BaseMessage]
         action_name = data['action']
         if action_name == AssignPlayerID.name:
@@ -72,81 +78,6 @@ class GameConnection(ConnectionListener):
             print(f"ERROR: couldn't find corresponding message for {data['action']}")
             return
         self.message_queue.put(msg_type.deserialize(data))
-
-    # def Network_assign_player_id(self, data):
-    #     player_id = AssignPlayerID.deserialize(data).player_id
-    #     print(f"*** you are: {player_id}")
-    #     self.player = ClientPlayer(player_id=player_id)
-    #
-    # def Network_update_players(self, data):
-    #     update_players: UpdatePlayers = UpdatePlayers.deserialize(data)
-    #     print(f"*** players: {[p for p in update_players.players]}")
-    #
-    # def Network_start_game(self, data):
-    #     print("*** Game Started!")
-    #     board = StartGame.deserialize(data).board
-    #     self.game_manager = ClientGameManager(player=self.player, board=board)
-    #
-    # def Network_deal_cards(self, data):
-    #     deal_cards: DealCards = DealCards.deserialize(data)
-    #     self.player.cards.append(deal_cards.cards)
-    #     print(f"*** Received cards: {self.player.cards}")
-    #
-    # def Network_start_turn(self, data):
-    #     print("*** Turn start!")
-    #     turn_id = YourTurn.deserialize(data).turn_id
-    #     self.game_manager.start_turn(turn_id=turn_id)  # managing turn history
-    #     self.Send(self.game_manager.next_action())
-    #
-    # def Network_ClientAction_move(self, data):
-    #     print("*** Received move!")
-    #     move: Move = Move.deserialize(data)
-    #
-    #     self.game_manager.board.move(move.player_id, move.position)
-    #     print(self.game_manager.board)
-    #     # self.game_manager.board.move(move., move.position)
-    #     if move.player_id == self.player.player_id:
-    #         self.Send(self.game_manager.next_action())
-
-    # def Network_ClientAction_suggest(self, data):
-    #     print("*** Received suggestion")
-    #     suggest: Suggest = Suggest.deserialize(data)
-    #
-    #     self.game_manager.handle_suggestion(suggest)
-    #     print(self.game_manager.board)
-    #     # for player in self.game_manager.board.player_tokens:
-    #     #     if suggest.suggestion[0] == player.character:
-    #     #
-    #     #         self.game_manager.board.move(player, suggest.suggestion[2].get_position())
-    #     #         print("Moved suggested player.")
-    #
-    #
-    #     # if suggest.player_id == self.player.player_id:
-    #     #     self.Send(self.game_manager.next_action())
-    #     # self.Send(self.game_manager.next_action())
-    #
-    # def Network_ClientAction_disprove(self, data):
-    #     disprove: Disprove = Disprove.deserialize(data)
-    #     if not disprove.card:
-    #         print(f"*** No one can disprove suggestion")
-    #     else:
-    #         print(f"*** Received disprove {disprove.card}")
-    #     self.Send(self.game_manager.next_action())
-    #
-    # def Network_request_disprove(self, data):
-    #     request_disprove = RequestDisprove.deserialize(data)
-    #     self.Send(self.game_manager.disprove(request_disprove.suggest))
-    #
-    # def Network_ClientAction_accuse(self, data):
-    #     accuse: Accuse = Accuse.deserialize(data)
-    #     '''if accuse.is_correct:
-    #         print("Congratulations! Your accusation was correct. You win!")
-    #
-    #     print("Sorry, your accusation was incorrect. You are eliminated from the game.")
-    #     self.player.active = False'''
-    #     self.Send(self.game_manager.handle_accusation_response(accuse))
-    #     # EndTurn(self.player.player_id)
-
 
     # built in stuff
 
