@@ -11,7 +11,7 @@ from clueless.model.card import Card
 
 class Element(Protocol):
     def __init__(self,
-                 wrapped: pygame.Surface | pygame_gui.core.UIElement | list[Element],
+                 wrapped: pygame.Surface | pygame_gui.core.UIElement | list[pygame_gui.core.UIElement],
                  rectangle: pygame.Rect):
         self.wrapped = wrapped
         self._rectangle: pygame.Rect = rectangle

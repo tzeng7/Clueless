@@ -99,8 +99,7 @@ class GameManager:
         if (character.value, location.value, weapon.value) == (self.winning_combination[0].card_value, self.winning_combination[1].card_value, self.winning_combination[2].card_value):
             game_over_message = f"Game Over! {accuser.player_id.nickname} made the correct accusation."
             accuse_action.is_correct = True
-            self.SendToPlayerWithId(accuser.player_id,accuse_action)
-            self.SendToAll(EndGame())
+            self.SendToAll(EndGame(accuse_action))
             print(game_over_message)
         else:
             accuser.active = False

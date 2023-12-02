@@ -38,10 +38,6 @@ class Ready(BaseMessage):
 class EndGame(BaseMessage):
     name = "end_game"
 
-class EndGame(BaseMessage):
-    name = "end_game"
-
-
 class BaseClientAction(BaseMessage):
     action_type = None
     name = "ClientAction"
@@ -117,13 +113,6 @@ class StartGame(BaseMessage):
         self.board = board
 
 
-class EndGame(BaseMessage):
-    name = "end_game"
-
-    def __init__(self):
-        super().__init__()
-
-
 class DealCards(BaseMessage):
     name = "deal_cards"
 
@@ -157,3 +146,11 @@ class Accuse(BaseClientAction):
     def __init__(self, player_id: PlayerID, accusation: (Character, Weapon, Location)):
         super().__init__(player_id)
         self.accusation = accusation
+
+
+class EndGame(BaseMessage):
+    name = "end_game"
+
+    def __init__(self, accuse: Accuse):
+        super().__init__()
+        self.accuse = accuse
