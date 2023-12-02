@@ -104,7 +104,7 @@ class GameClient(TitleView.Delegate):
         self.connection.Send(self.game_manager.accuse((character, weapon, location)))
 
     def did_end_turn(self):
-        #on_click: action_button
+        # on_click: action_button
         self.connection.Send(self.game_manager.end_turn())
 
     def did_disprove(self, card: Card, suggest: Suggest):
@@ -183,9 +183,16 @@ class GameClient(TitleView.Delegate):
 
     def handle_msg_ClientAction_accuse(self, accuse: Accuse):
         print(f"The accusation is {accuse.accusation[0], accuse.accusation[1], accuse.accusation[2]}")
-
+        # accuse: Accuse = Accuse.deserialize(data)
+        # '''if accuse.is_correct:
+        #     print("Congratulations! Your accusation was correct. You win!")
+        #
+        # print("Sorry, your accusation was incorrect. You are eliminated from the game.")
+        # self.player.active = False'''
+        # self.Send(self.game_manager.handle_accusation_response(accuse))
 
     def handle_msg_ClientAction_end_turn(self, end_turn: EndTurn):
+        print("Received End Turn")
         pass
 
 

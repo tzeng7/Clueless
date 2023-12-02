@@ -25,9 +25,9 @@ elements onto its `pygame.Surface` screen, adding and removing elements, and dis
 
 
 ## Elements
-- Class hierarchy for Element (pygame) and ManagedElement (pygame_gui)
-- any wrapped element + a Rectangle
+
 - Stacks + resizing
+- cleanup for stacks
 
 
 ## Example using TitleView

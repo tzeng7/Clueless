@@ -9,15 +9,12 @@ from clueless.model.board_enums import ActionType, Direction, Character, Weapon,
 from clueless.model.card import Card
 
 
-
-
 class Element(Protocol):
-    def __init__(self, wrapped: pygame.Surface | pygame_gui.core.UIElement | list, rectangle: pygame.Rect,
-                 is_managed: bool):
+    def __init__(self,
+                 wrapped: pygame.Surface | pygame_gui.core.UIElement | list[Element],
+                 rectangle: pygame.Rect):
         self.wrapped = wrapped
         self._rectangle: pygame.Rect = rectangle
-        self.is_ui_manager_managed = is_managed
-        self.is_hidden = False
 
     @property
     def rectangle(self):
@@ -26,45 +23,32 @@ class Element(Protocol):
     def set_top_left(self, top_left: (int, int)):
         self._rectangle.topleft = top_left
 
-    def set_center(self, center: (int, int)):
+    def set_center(self, center: (int, int)):  # do not override, convenience method
         top_left = (center[0] - (self.rectangle.width // 2), center[1] - (self.rectangle.height // 2))
         self.set_top_left(top_left)
 
-    def set_bottom_right(self, bottom_right: (int, int)):
+    def set_bottom_right(self, bottom_right: (int, int)):  # do not override, convenience method
         top_left = (bottom_right[0] - self.rectangle.width, bottom_right[1] - self.rectangle.height)
         self.set_top_left(top_left)
 
     def draw_onto(self, screen: pygame.Surface):
-        if self.is_hidden:
-            return
         screen.blit(self.wrapped, self.rectangle)
-
-    def hide(self):
-        self.is_hidden = True
-
-    def show(self):
-        self.is_hidden = False
 
     # Permanently remove and clean up element from any managers.
     def kill(self):
         pass
 
-# "Managed" by pygame_gui and its UIManager
+
 class ManagedElement(Element):
+    # "Managed" by pygame_gui and its UIManager
     def __init__(self, any_element: pygame_gui.core.UIElement):
-        super().__init__(any_element, any_element.rect, is_managed=True)
+        super().__init__(any_element, any_element.rect)
 
     def draw_onto(self, screen: pygame.Surface):
         pass
 
     def set_top_left(self, top_left: (int, int)):
         self.wrapped.set_position(top_left)
-
-    def hide(self):
-        self.wrapped.hide()
-
-    def show(self):
-        self.wrapped.show()
 
     def kill(self):
         self.wrapped.kill()
@@ -148,17 +132,17 @@ class TextElement(Element):
                  primary_color: Color = Color("black")):
         self.font = pygame.font.Font(filename="../resources/VT323-Regular.ttf", size=size)
         surface = self.font.render(text, True, primary_color, bgcolor=Color("white"))
-        super().__init__(surface, surface.get_rect(), is_managed=False)
+        super().__init__(surface, surface.get_rect())
         self._text = text
         self.size = size
         self.primary_color = primary_color
-
 
     def __rerender(self):
         old_rect = self.rectangle
         self.wrapped = self.font.render(self.text, True, self.primary_color)
         self._rectangle = self.wrapped.get_rect()
         self.rectangle.center = old_rect.center
+
     @property
     def text(self):
         return self._text
@@ -174,13 +158,12 @@ class ImageElement(Element):
         image = pygame.image.load(f'../resources/{name}.png').convert_alpha()
         # Scale the image to your needed size
         scaled_image = pygame.transform.smoothscale(image, size)
-        super().__init__(scaled_image, scaled_image.get_rect(), is_managed=False)
-
+        super().__init__(scaled_image, scaled_image.get_rect())
 
 
 class Rectangle(Element):
     def __init__(self, rect: pygame.Rect, screen: pygame.Surface):
-        super().__init__(screen, rect, False)
+        super().__init__(screen, rect)
 
     def draw_onto(self, screen: pygame.Surface):
         pygame.draw.rect(screen, pygame.Color(0, 0, 0, 0), self.rectangle, 4, 10)
@@ -193,7 +176,7 @@ class Stack(Element):
         self.axis = axis
         self.alignment = alignment
         self.padding = padding
-        super().__init__(elements, self.__calculate_total_rect(), is_managed=False)
+        super().__init__(elements, self.__calculate_total_rect())
         self.set_top_left((0, 0))
 
     @property
@@ -211,14 +194,6 @@ class Stack(Element):
         for element in self.elements:
             element.kill()
         self.elements = []
-
-    def hide(self):
-        for element in self.elements:
-            element.hide()
-
-    def show(self):
-        for element in self.elements:
-            element.show()
 
     def kill(self):
         for element in self.elements:
