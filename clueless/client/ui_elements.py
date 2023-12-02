@@ -178,7 +178,7 @@ class ImageElement(Element):
 
 
 
-class ViewBox(Element):
+class Rectangle(Element):
     def __init__(self, rect: pygame.Rect, screen: pygame.Surface):
         super().__init__(screen, rect, False)
 

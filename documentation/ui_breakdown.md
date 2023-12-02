@@ -1,4 +1,4 @@
-# UI Framework
+# Drawing UI
 
 ## `pygame` & `pygame_gui`
 
@@ -16,10 +16,13 @@ to each key event one by one. To simplify, we imported `pygame_gui`, which provi
 use `pygame.draw` and `pygame.Surface.blit` to draw directly onto the Surface. `pygame_gui` uses a UIManager to 
 manage all `pygame_gui.UIElement`s, and the UIManager draws them all onto the Surface.
 
-## View
-- describe what a View is composed of, functionality (managing lists of elements, 
-abstracting away pygame vs. pygame_gui elements and differences in adding/removing those different elements)
-- dispatches I/O events back to corresponding Elements so that Elements can call their delegate methods
+## UI Framework
+
+To manage `pygame` and `pygame_gui` elements, we introduce two types of classes: Views and Elements. 
+
+A View is composed of multiple elements and takes up the entire screen. The view is responsible for drawing those
+elements onto its `pygame.Surface` screen, adding and removing elements, and dispatching pygame events to its elements.
+
 
 ## Elements
 - Class hierarchy for Element (pygame) and ManagedElement (pygame_gui)

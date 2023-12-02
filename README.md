@@ -50,9 +50,9 @@
     - end turn + next player
   - Game indicator for whose turn it is
 - Board
-  - Add hallways
   - (optional) add secret passageway indicators
-  - ability to draw board model and tokens on the board
+  - ability to draw overlapping characters
+  - (optional) ability to draw weapon tokens
 - Action Box
   - ability to deselect or cancel
 - Disprove
