@@ -6,7 +6,7 @@ from PodSixNet.Connection import ConnectionListener, connection
 
 from clueless.messages.messages import JoinGame, Ready, UpdatePlayers, AssignPlayerID, DealCards, YourTurn, \
     RequestDisprove, \
-    Disprove, BaseMessage, StartGame, Move, Suggest, Accuse, BaseClientAction
+    Disprove, BaseMessage, StartGame, Move, Suggest, Accuse, BaseClientAction, EndGame
 
 
 class GameConnection(ConnectionListener):
@@ -63,6 +63,8 @@ class GameConnection(ConnectionListener):
             msg_type = DealCards
         elif action_name == YourTurn.name:
             msg_type = YourTurn
+        elif action_name == EndGame.name:
+            msg_type = EndGame
         # CLIENT ACTIONS
         elif action_name == Move.client_action_name():
             msg_type = Move
