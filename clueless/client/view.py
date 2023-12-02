@@ -11,7 +11,7 @@ from clueless.client.ui_elements import Element, Rectangle, TextInputElement, Te
     ImageElement, HorizontalStack, VerticalStack, \
     PayloadButton
 from clueless.client.ui_enums import Pico
-from clueless.messages.messages import Suggest
+from clueless.messages.messages import Suggest, Accuse
 from clueless.model.board import Board
 from clueless.model.board_enums import Character, ActionType, Direction, Weapon, Location, CardType
 from clueless.model.card import Card
@@ -377,3 +377,11 @@ class GameView(View):
         self.menu_dialog.text = self.DIALOG_TEXT_WAITING
         self.menu.clear()
         self.delegate.did_disprove(payload, suggest)
+
+    ####################
+    ###   Game Over  ###
+    ####################
+    def game_over(self, accuse: Accuse):
+        self.menu_dialog.text = (f"Game Over!\n{accuse.player_id.nickname} correctly accused {accuse.accusation[0].value} of "
+                                 f"using the {accuse.accusation[1].value} in the {accuse.accusation[2].value}")
+        self.menu.clear()
