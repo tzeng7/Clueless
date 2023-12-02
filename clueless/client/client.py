@@ -9,7 +9,7 @@ from clueless.client.client_player import ClientPlayer
 from clueless.client.connection import GameConnection
 from clueless.client.view import TitleView, View, GameView
 from clueless.messages.messages import AssignPlayerID, UpdatePlayers, StartGame, Move, DealCards, YourTurn, Suggest, \
-    RequestDisprove, Disprove, EndTurn, Accuse
+    RequestDisprove, Disprove, EndTurn, Accuse, EndGame
 from clueless.model.board import Room
 from clueless.model.board_enums import Direction, Character, Weapon, Location
 from clueless.model.card import Card
@@ -191,10 +191,10 @@ class GameClient(TitleView.Delegate):
         # self.player.active = False'''
         # self.Send(self.game_manager.handle_accusation_response(accuse))
 
-    def handle_msg_ClientAction_end_turn(self, end_turn: EndTurn):
-        print("Received End Turn")
-        pass
-
+    def handle_msg_end_game(self, end_game: EndGame):
+        print(f"{end_game.accuse.player_id.nickname} guessed correctly. Game Over!")
+        game_view = cast(GameView, self.view)
+        game_view.game_over(end_game.accuse)
 
 if __name__ == '__main__':
     c = GameClient()
