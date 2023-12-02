@@ -9,19 +9,6 @@ from clueless.model.board_enums import ActionType, Direction, Character, Weapon,
 from clueless.model.card import Card
 
 
-@runtime_checkable
-class Clickable(Protocol):
-    def clicked(self):
-        pass
-
-
-@runtime_checkable
-class Hoverable(Protocol):
-    def mouse_over(self):
-        pass
-
-    def mouse_away(self):
-        pass
 
 
 class Element(Protocol):
@@ -61,21 +48,6 @@ class Element(Protocol):
     # Permanently remove and clean up element from any managers.
     def kill(self):
         pass
-
-    def respond_to_MouseDown(self, event):
-        if not isinstance(self, Clickable):
-            return
-        if self.rectangle.collidepoint(event.pos[0], event.pos[1]):
-            self.clicked()
-
-    def respond_to_MouseMotion(self, event):
-        if not isinstance(self, Hoverable):
-            return
-        if self.rectangle.collidepoint(event.pos[0], event.pos[1]):
-            self.mouse_over()
-        else:
-            self.mouse_away()
-
 
 # "Managed" by pygame_gui and its UIManager
 class ManagedElement(Element):
@@ -168,50 +140,25 @@ class PayloadButton(ManagedButton):
         return PayloadButton(card, button, on_click)
 
 
-class TextElement(Element, Clickable, Hoverable):
+class TextElement(Element):
 
     def __init__(self,
                  text: str,
                  size: int = 32,
-                 primary_color: Color = Color("black"),
-                 highlight_color: Color | None = None,
-                 on_mouse_down: Callable[[], None] | None = None):
+                 primary_color: Color = Color("black")):
         self.font = pygame.font.Font(filename="../resources/VT323-Regular.ttf", size=size)
         surface = self.font.render(text, True, primary_color, bgcolor=Color("white"))
         super().__init__(surface, surface.get_rect(), is_managed=False)
         self._text = text
         self.size = size
         self.primary_color = primary_color
-        self.highlight_color = highlight_color
-        self.current_color = primary_color
-        self.on_mouse_down = on_mouse_down
-        self.highlighted = False
 
-    def mouse_over(self):
-        if self.highlight_color and not self.highlighted:
-            self.highlighted = True
-            self.__change_color(self.highlight_color)
-
-    def mouse_away(self):
-        if self.highlighted:
-            self.highlighted = False
-            self.__change_color(self.primary_color)
-
-    def __change_color(self, color):
-        self.current_color = color
-        self.__rerender()
 
     def __rerender(self):
         old_rect = self.rectangle
-        self.wrapped = self.font.render(self.text, True, self.current_color)
+        self.wrapped = self.font.render(self.text, True, self.primary_color)
         self._rectangle = self.wrapped.get_rect()
         self.rectangle.center = old_rect.center
-
-    def clicked(self):
-        if not self.on_mouse_down:
-            return
-        self.on_mouse_down()
-
     @property
     def text(self):
         return self._text
