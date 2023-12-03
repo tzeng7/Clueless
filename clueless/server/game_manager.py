@@ -1,8 +1,3 @@
-from messages.messages import DealCards, YourTurn, BaseMessage, Suggest, Move, EndTurn, RequestDisprove, Accuse, \
-    Disprove, EndGame
-from model.board import Board
-from model.board_enums import Character, Location, Weapon, CardType
-
 from clueless.messages.messages import DealCards, YourTurn, BaseMessage, Suggest, Move, EndTurn, RequestDisprove, Accuse, \
     Disprove, EndGame
 from clueless.model.board import Board
@@ -104,10 +99,7 @@ class GameManager:
         else:
             accuser.active = False
             self.SendToPlayerWithId(accuser.player_id, accuse_action)
-            print(f"{accuser.player_id.nickname} is inactive")
-
-        #self.SendToAll(f"{accuser.player_id.nickname} is inactive")
-
+            self.end_turn(EndTurn(accuser.player_id))
     def __create_cards(self):
         cards = []
 

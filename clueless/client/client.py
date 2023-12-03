@@ -105,7 +105,11 @@ class GameClient(TitleView.Delegate):
 
     def did_end_turn(self):
         # on_click: action_button
+        if type(self.view) is not GameView:
+            print("Error: received suggestion selection but no longer showing game view")
         self.connection.Send(self.game_manager.end_turn())
+        game_view = cast(GameView, self.view)
+        game_view.set_dialog_waiting()
 
     def did_disprove(self, card: Card, suggest: Suggest):
         self.connection.Send(self.game_manager.disprove(card, suggest))
@@ -173,16 +177,20 @@ class GameClient(TitleView.Delegate):
         game_view.show_disprove(disproving_cards, request_disprove.suggest)
 
     def handle_msg_ClientAction_disprove(self, disprove: Disprove):
+
         if not disprove.card:
-            print("No card to disprove.")
+            text = "No card to disprove."
         else:
-            print(f"The disproving card is {disprove.card.card_value}")
+            text = f"The disproving card is {disprove.card.card_value}"
         if disprove.suggest.player_id == self.player.player_id:
             game_view = cast(GameView, self.view)
             game_view.show_actions()
 
     def handle_msg_ClientAction_accuse(self, accuse: Accuse):
-        print(f"The accusation is {accuse.accusation[0], accuse.accusation[1], accuse.accusation[2]}")
+        incorrect = "Your accusation was incorrect."
+        game_view = cast(GameView, self.view)
+        game_view.set_dialog(incorrect)
+
         # accuse: Accuse = Accuse.deserialize(data)
         # '''if accuse.is_correct:
         #     print("Congratulations! Your accusation was correct. You win!")
@@ -190,6 +198,10 @@ class GameClient(TitleView.Delegate):
         # print("Sorry, your accusation was incorrect. You are eliminated from the game.")
         # self.player.active = False'''
         # self.Send(self.game_manager.handle_accusation_response(accuse))
+    def handle_msg_ClientAction_end_turn(self, end_turn: EndTurn):
+        print("Received End Turn!")
+        # if self.player.player_id == end_turn.player_id:
+
 
     def handle_msg_end_game(self, end_game: EndGame):
         print(f"{end_game.accuse.player_id.nickname} guessed correctly. Game Over!")

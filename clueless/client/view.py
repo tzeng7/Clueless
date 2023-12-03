@@ -11,7 +11,7 @@ from clueless.client.ui_elements import Element, Rectangle, TextInputElement, Te
     ImageElement, HorizontalStack, VerticalStack, \
     PayloadButton
 from clueless.client.ui_enums import Pico
-from clueless.messages.messages import Suggest, Accuse
+from clueless.messages.messages import Suggest, Accuse, Disprove
 from clueless.model.board import Board
 from clueless.model.board_enums import Character, ActionType, Direction, Weapon, Location, CardType
 from clueless.model.card import Card
@@ -149,6 +149,7 @@ class GameView(View):
     BOARD_GRID_OFFSETS = [0.12, 0.31, 0.5, 0.69, 0.88] * View.SCREEN_SIZE[0]
 
     DIALOG_TEXT_WAITING = "Waiting for turn..."
+    DIALOG_TEXT_INCORRECT = "You have accused incorrectly."
 
     class Delegate(Protocol):
         def did_move(self, direction: (Direction, (int, int))):
@@ -343,7 +344,7 @@ class GameView(View):
                 text="None",
                 manager=self.ui_manager,
                 visible=True),
-                                                    on_click=lambda x: self.delegate.did_disprove(x, suggest))
+                                                    on_click=lambda x: self.__disprove_card_clicked(x, suggest))
             one_button_stack = VerticalStack([none_button], clueless.client.ui_enums.Alignment.TOP,
                                              padding=self.VERTICAL_PADDING)
 
@@ -374,14 +375,22 @@ class GameView(View):
             self.menu.add_element(v_stack_location)
 
     def __disprove_card_clicked(self, payload: Card | None, suggest: Suggest):
+        self.set_dialog_waiting()
+        self.delegate.did_disprove(payload, suggest)
+
+    def set_dialog_waiting(self):
         self.menu_dialog.text = self.DIALOG_TEXT_WAITING
         self.menu.clear()
-        self.delegate.did_disprove(payload, suggest)
+
+    def set_dialog(self, text: str):
+        self.menu_dialog.text = text
+        self.menu.clear()
 
     ####################
     ###   Game Over  ###
     ####################
     def game_over(self, accuse: Accuse):
-        self.menu_dialog.text = (f"Game Over!\n{accuse.player_id.nickname} correctly accused {accuse.accusation[0].value} of "
-                                 f"using the {accuse.accusation[1].value} in the {accuse.accusation[2].value}")
+        self.menu_dialog.text = (
+            f"Game Over!\n{accuse.player_id.nickname} correctly accused {accuse.accusation[0].value} of "
+            f"using the {accuse.accusation[1].value} in the {accuse.accusation[2].value}")
         self.menu.clear()

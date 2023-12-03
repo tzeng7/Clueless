@@ -2,11 +2,6 @@ from PodSixNet.Channel import Channel
 from PodSixNet.Server import Server
 import time
 
-from messages.messages import JoinGame, StartGame, UpdatePlayers, AssignPlayerID, BaseClientAction, BaseMessage, Move, \
-    Suggest, Disprove, EndTurn, Accuse
-from model.board_enums import Character
-from model.player import PlayerID
-
 from clueless.messages.messages import JoinGame, StartGame, UpdatePlayers, AssignPlayerID, BaseClientAction, BaseMessage, Move, \
     Suggest, Disprove, EndTurn, Accuse
 from clueless.model.board_enums import Character
