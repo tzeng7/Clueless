@@ -93,6 +93,8 @@ class GameClient(TitleView.Delegate):
         if type(self.view) is not GameView:
             print("Error: received suggestion selection but no longer showing game view")
         print(f"Suggested: {character}, {weapon}")
+        game_view = cast(GameView, self.view)
+        game_view.set_dialog("Waiting for disproval...")
         space = self.game_manager.board.get_player_space(self.player.player_id)
         location = cast(Room, space).room_type
         self.connection.Send(self.game_manager.suggest((character, weapon, location)))
@@ -177,13 +179,15 @@ class GameClient(TitleView.Delegate):
         game_view.show_disprove(disproving_cards, request_disprove.suggest)
 
     def handle_msg_ClientAction_disprove(self, disprove: Disprove):
-
+        game_view = cast(GameView, self.view)
         if not disprove.card:
             text = "No card to disprove."
         else:
             text = f"The disproving card is {disprove.card.card_value}"
+        game_view.set_dialog(text)
+        self.update()
+        pygame.time.delay(2000)
         if disprove.suggest.player_id == self.player.player_id:
-            game_view = cast(GameView, self.view)
             game_view.show_actions()
 
     def handle_msg_ClientAction_accuse(self, accuse: Accuse):

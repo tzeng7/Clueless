@@ -1,5 +1,6 @@
 from enum import Enum
-from typing import Protocol, Type
+from math import sqrt
+from typing import Protocol, Type, cast
 
 import pygame
 import pygame_gui
@@ -317,6 +318,8 @@ class GameView(View):
 
     def update_board_elements(self, board_model: Board):
         # TODO: handle overlap
+
+        overlapping: dict[(int, int), [ImageElement]] = {}
         for player_id, player_token in board_model.player_tokens.items():
             image_element: ImageElement
             if player_id in self.board_elements:
@@ -330,6 +333,29 @@ class GameView(View):
             player_image_x = self.BOARD_GRID_OFFSETS[new_board_position[1]] * self.BOARD_SIZE[0]
             player_image_y = self.BOARD_GRID_OFFSETS[new_board_position[0]] * self.BOARD_SIZE[1]
             image_element.set_center((self.BOARD_TOP_LEFT[0] + player_image_x, self.BOARD_TOP_LEFT[1] + player_image_y))
+            players_at_same_position = overlapping.get(new_board_position, [])
+            players_at_same_position.append(image_element)
+            overlapping[new_board_position] = players_at_same_position
+
+        count_to_offsets = {
+            2: [(-0.03, 0), (0.03, 0)],
+            3: [(0, -sqrt(3)*0.02), (-0.03, sqrt(3)*0.015), (0.03, sqrt(3)*0.015)],
+            4: [(-0.03, -0.03), (0.03, -0.03), (-0.03, 0.03), (0.03, 0.03)],
+            5: [(-0.03, -0.03), (0.03, -0.03), (0, 0), (-0.03, 0.03), (0.03, 0.03)],
+            6: [(-0.03, -0.04), (0.03, -0.04), (-0.03, 0), (0.03, 0), (-0.03, 0.04), (0.03, 0.04)]
+        }
+        for _, overlapping_images in overlapping.items():
+            if len(overlapping_images) < 2:
+                continue
+            elif len(overlapping_images) > 6:
+                print("Error! Only expect maximum 6 tokens at any position")
+            else:
+                offsets = [(offset[0] * View.SCREEN_SIZE[0], offset[1] * View.SCREEN_SIZE[1])
+                           for offset in count_to_offsets[len(overlapping_images)]]
+                for (offset_x, offset_y), image in zip(offsets, overlapping_images):
+                    prev_position = image.rectangle.center
+                    image.set_center((prev_position[0] + offset_x, prev_position[1] + offset_y))
+
 
     ################
     ### DISPROVE ###

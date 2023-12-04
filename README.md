@@ -45,15 +45,11 @@
     - suggestions
     - (optional) disprove. This probably requires server changes
     - accusation (correct/incorrect)
-      - correct: transition to game over view for all players
       - incorrect: show dialog and continue observation (add indicator for person who has lost)
-    - end turn + next player
-  - Game indicator for whose turn it is
+        - the waiting for turn text should instead default to accusing incorrectly
 - Board
+  - Game indicator for whose turn it is
+  - Show which cards are given to the player
+  - show which characters turn it is
   - (optional) add secret passageway indicators
-  - ability to draw overlapping characters
   - (optional) ability to draw weapon tokens
-- Action Box
-  - ability to deselect or cancel
-- Disprove
-  - show menu dialog for which card was sent to suggester
