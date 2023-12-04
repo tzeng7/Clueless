@@ -128,7 +128,7 @@ class GameClient(TitleView.Delegate):
     def handle_msg_update_players(self, msg: UpdatePlayers):
         if type(self.view) is not TitleView:
             print("Error: received UpdatePlayers but no longer showing title view")
-        self.view.add_player_id(msg.players)
+        self.view.add_player_id(msg.players, self.player.player_id)
         print("Received UpdatePlayers!")
 
     def handle_msg_start_game(self, msg: StartGame):

@@ -122,14 +122,26 @@ class TitleView(View):
         self.add_element(ready_button)
         self.interactive_element = ready_button
 
-    def add_player_id(self, players: [PlayerID]):
+        ready_prompt = TextElement(text="Game starts when all players click READY!", primary_color=Color(0, 0, 255))
+        ready_prompt.set_center((self.screen.get_rect().width // 2, (self.screen.get_rect().height // 2) + 50))
+        self.add_element(ready_prompt)
+
+    def add_player_id(self, players: [PlayerID], current_player_id: PlayerID):
         player_list = []
         for player in players:
-            player_avatar = ImageElement(name=player.character.file_name, size=self.DEFAULT_LOBBY_IMAGE_SIZE)
-            player_id = TextElement(text=f"{player.nickname} ({player.character.value})",
-                                    size=16,
-                                    primary_color=Pico.from_character(player.character))
-            player_row = HorizontalStack([player_avatar, player_id], padding=0)
+            if current_player_id == player:
+                arrow_avatar = ImageElement(name="arrow", size=self.DEFAULT_LOBBY_IMAGE_SIZE) #TODO: find a better arrow
+                player_avatar = ImageElement(name=player.character.file_name, size=self.DEFAULT_LOBBY_IMAGE_SIZE)
+                player_id = TextElement(text=f"{player.nickname}({player.character.value})",
+                                        size=16,
+                                        primary_color=Pico.from_character(player.character))
+                player_row = HorizontalStack([arrow_avatar, player_avatar, player_id], padding=0)
+            else:
+                player_avatar = ImageElement(name=player.character.file_name, size=self.DEFAULT_LOBBY_IMAGE_SIZE)
+                player_id = TextElement(text=f"{player.nickname} ({player.character.value})",
+                                        size=16,
+                                        primary_color=Pico.from_character(player.character))
+                player_row = HorizontalStack([player_avatar, player_id], padding=0)
             player_list.append(player_row)
         self.lobby_stack.elements = player_list  # replace with new list
         self.lobby_stack.set_bottom_right(self.SCREEN_SIZE)
@@ -339,7 +351,7 @@ class GameView(View):
 
         count_to_offsets = {
             2: [(-0.03, 0), (0.03, 0)],
-            3: [(0, -sqrt(3)*0.02), (-0.03, sqrt(3)*0.015), (0.03, sqrt(3)*0.015)],
+            3: [(0, -sqrt(3) * 0.02), (-0.03, sqrt(3) * 0.015), (0.03, sqrt(3) * 0.015)],
             4: [(-0.03, -0.03), (0.03, -0.03), (-0.03, 0.03), (0.03, 0.03)],
             5: [(-0.03, -0.03), (0.03, -0.03), (0, 0), (-0.03, 0.03), (0.03, 0.03)],
             6: [(-0.03, -0.04), (0.03, -0.04), (-0.03, 0), (0.03, 0), (-0.03, 0.04), (0.03, 0.04)]
@@ -355,7 +367,6 @@ class GameView(View):
                 for (offset_x, offset_y), image in zip(offsets, overlapping_images):
                     prev_position = image.rectangle.center
                     image.set_center((prev_position[0] + offset_x, prev_position[1] + offset_y))
-
 
     ################
     ### DISPROVE ###
