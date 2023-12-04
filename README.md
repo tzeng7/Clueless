@@ -51,3 +51,7 @@
   - (optional) add secret passageway indicators
   - (optional) ability to draw weapon tokens
 
+QA: 
+- Each player's cards are unique
+- ![](QA.png)
+
