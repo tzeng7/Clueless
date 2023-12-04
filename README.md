@@ -43,7 +43,6 @@
   - When game starts, player view should change to observe game events even if it's not their turn
     - movement
     - suggestions
-    - (optional) disprove. This probably requires server changes
     - accusation (correct/incorrect)
       - incorrect: show dialog and continue observation (add indicator for person who has lost)
         - the waiting for turn text should instead default to accusing incorrectly
