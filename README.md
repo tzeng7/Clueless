@@ -49,6 +49,5 @@
 - Board
   - Game indicator for whose turn it is
   - Show which cards are given to the player
-  - show which characters turn it is
   - (optional) add secret passageway indicators
   - (optional) ability to draw weapon tokens
