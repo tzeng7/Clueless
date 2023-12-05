@@ -99,7 +99,7 @@ class GameManager:
         else:
             accuser.active = False
             self.SendToPlayerWithId(accuser.player_id, accuse_action)
-            self.end_turn(EndTurn(accuser.player_id))
+
     def __create_cards(self):
         cards = []
 

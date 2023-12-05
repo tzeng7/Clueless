@@ -52,8 +52,6 @@ class ManagedElement(Element):
 
     def kill(self):
         self.wrapped.kill()
-
-
 class TextInputElement(ManagedElement):
     def __init__(self, input: pygame_gui.elements.UITextEntryLine, on_text_finished: Callable[[str], None]):
         super().__init__(input)
@@ -86,6 +84,8 @@ class ManagedButton(ManagedElement):
     def disable(self):
         self.wrapped.disable()
 
+    def set_text(self, text):
+        self.wrapped.set_text(text)
 
 class PayloadButton(ManagedButton):
     def __init__(self, payload: any, button: pygame_gui.elements.UIButton,

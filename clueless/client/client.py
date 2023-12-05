@@ -114,6 +114,9 @@ class GameClient(TitleView.Delegate):
         game_view.set_dialog_waiting()
 
     def did_disprove(self, card: Card, suggest: Suggest):
+        game_view = cast(GameView, self.view)
+        if game_view.menu_dialog.text != "Your accusation was incorrect.":
+            game_view.set_dialog_waiting()
         self.connection.Send(self.game_manager.disprove(card, suggest))
 
 
@@ -194,6 +197,8 @@ class GameClient(TitleView.Delegate):
         incorrect = "Your accusation was incorrect."
         game_view = cast(GameView, self.view)
         game_view.set_dialog(incorrect)
+        self.connection.Send(self.game_manager.end_turn())
+
 
         # accuse: Accuse = Accuse.deserialize(data)
         # '''if accuse.is_correct:

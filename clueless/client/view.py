@@ -76,7 +76,7 @@ class View(Protocol):
 
 
 class TitleView(View):
-    DEFAULT_BUTTON_SIZE = (200, 30)
+    DEFAULT_BUTTON_SIZE = (250, 30)
     DEFAULT_LOBBY_IMAGE_SIZE = (65, 65)
 
     class Delegate(Protocol):
@@ -93,7 +93,7 @@ class TitleView(View):
         text_input = TextInputElement(
             pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((0, 0), self.DEFAULT_BUTTON_SIZE),
                                                 manager=ui_manager,
-                                                placeholder_text="Enter nickname"),
+                                                placeholder_text="Enter nickname to join."),
             on_text_finished=delegate.did_set_nickname
         )
         text_input.set_center((screen.get_rect().width // 2, screen.get_rect().height // 2))
@@ -116,32 +116,39 @@ class TitleView(View):
                                          text='READY',
                                          manager=self.ui_manager,
                                          visible=True),
-            on_click=self.delegate.did_ready
+            on_click=self.__on_ready
         )
         ready_button.set_center((self.screen.get_rect().width // 2, self.screen.get_rect().height // 2))
         self.add_element(ready_button)
         self.interactive_element = ready_button
 
-        ready_prompt = TextElement(text="Game starts when all players click READY!", primary_color=Color(0, 0, 255))
+        ready_prompt = TextElement(text="Game starts when all players click READY!", size=24, primary_color=Color(0, 0, 255))
         ready_prompt.set_center((self.screen.get_rect().width // 2, (self.screen.get_rect().height // 2) + 50))
         self.add_element(ready_prompt)
+
+    def __on_ready(self):
+        self.delegate.did_ready()
+        cast(ManagedButton, self.interactive_element).set_text("")
+        check_height = self.interactive_element.rectangle.height - 10
+        ready_check = ImageElement("check_mark", (check_height, check_height))
+        ready_check.set_center(self.interactive_element.rectangle.center)
+        self.add_element(ready_check)
+
 
     def add_player_id(self, players: [PlayerID], current_player_id: PlayerID):
         player_list = []
         for player in players:
             if current_player_id == player:
-                arrow_avatar = ImageElement(name="arrow", size=self.DEFAULT_LOBBY_IMAGE_SIZE) #TODO: find a better arrow
                 player_avatar = ImageElement(name=player.character.file_name, size=self.DEFAULT_LOBBY_IMAGE_SIZE)
-                player_id = TextElement(text=f"{player.nickname}({player.character.value})",
+                player_id = TextElement(text=f"(YOU){player.nickname} ({player.character.value})",
                                         size=16,
                                         primary_color=Pico.from_character(player.character))
-                player_row = HorizontalStack([arrow_avatar, player_avatar, player_id], padding=0)
             else:
                 player_avatar = ImageElement(name=player.character.file_name, size=self.DEFAULT_LOBBY_IMAGE_SIZE)
                 player_id = TextElement(text=f"{player.nickname} ({player.character.value})",
                                         size=16,
                                         primary_color=Pico.from_character(player.character))
-                player_row = HorizontalStack([player_avatar, player_id], padding=0)
+            player_row = HorizontalStack([player_avatar, player_id], padding=0)
             player_list.append(player_row)
         self.lobby_stack.elements = player_list  # replace with new list
         self.lobby_stack.set_bottom_right(self.SCREEN_SIZE)
@@ -412,7 +419,6 @@ class GameView(View):
             self.menu.add_element(v_stack_location)
 
     def __disprove_card_clicked(self, payload: Card | None, suggest: Suggest):
-        self.set_dialog_waiting()
         self.delegate.did_disprove(payload, suggest)
 
     def set_dialog_waiting(self):
