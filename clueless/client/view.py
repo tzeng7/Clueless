@@ -135,20 +135,18 @@ class TitleView(View):
         self.add_element(ready_check)
 
 
-    def add_player_id(self, players: [PlayerID], current_player_id: PlayerID):
+    def add_player_id(self, players: [(PlayerID, bool)], current_player_id: PlayerID):
         player_list = []
-        for player in players:
-            if current_player_id == player:
-                player_avatar = ImageElement(name=player.character.file_name, size=self.DEFAULT_LOBBY_IMAGE_SIZE)
-                player_id = TextElement(text=f"(YOU){player.nickname} ({player.character.value})",
-                                        size=16,
-                                        primary_color=Pico.from_character(player.character))
-            else:
-                player_avatar = ImageElement(name=player.character.file_name, size=self.DEFAULT_LOBBY_IMAGE_SIZE)
-                player_id = TextElement(text=f"{player.nickname} ({player.character.value})",
-                                        size=16,
-                                        primary_color=Pico.from_character(player.character))
-            player_row = HorizontalStack([player_avatar, player_id], padding=0)
+        for player_id, ready in players:
+            formatted_text = f"{player_id.character.value}: {player_id.nickname}"
+            if player_id == current_player_id:
+                formatted_text = formatted_text + " (YOU)"
+            player_ready_avatar = ImageElement("check_mark" if ready else "cross_mark", (20, 20))
+            player_avatar = ImageElement(name=player_id.character.file_name, size=self.DEFAULT_LOBBY_IMAGE_SIZE)
+            player_text = TextElement(text=formatted_text,
+                                      size=16,
+                                      primary_color=Pico.from_character(player_id.character))
+            player_row = HorizontalStack([player_ready_avatar, player_avatar, player_text], padding=0)
             player_list.append(player_row)
         self.lobby_stack.elements = player_list  # replace with new list
         self.lobby_stack.set_bottom_right(self.SCREEN_SIZE)
@@ -219,15 +217,23 @@ class GameView(View):
                                     alignment=clueless.client.ui_enums.Alignment.TOP,
                                     padding=self.HORIZONTAL_PADDING)
         self.menu.set_top_left((self.MENU_PADDING, self.menu_dialog.rectangle.bottom + self.VERTICAL_PADDING))
+        self.add_element(self.menu_dialog)
+        self.add_element(self.menu)
+        self.add_element(action_box)
 
         # Setup Board (top half of the screen)
         board = ImageElement("GameBoardV1", self.BOARD_SIZE)
         board.set_top_left(self.BOARD_TOP_LEFT)
         self.board_elements: dict[PlayerID, ImageElement] = {}
         self.add_element(board)
-        self.add_element(self.menu_dialog)
-        self.add_element(self.menu)
-        self.add_element(action_box)
+
+
+        self.lobby_stack = VerticalStack([], alignment=clueless.client.ui_enums.Alignment.LEFT, padding=10)
+        self.add_element(self.lobby_stack)
+        self.turn_pointer = ImageElement("pointer", (30, 30))
+        self.turn_pointer.hide()
+        self.add_element(self.turn_pointer)
+
 
     ########################
     ### ACTION SELECTION ###
@@ -335,9 +341,28 @@ class GameView(View):
     ### BOARD UPDATES ###
     #####################
 
-    def update_board_elements(self, board_model: Board):
-        # TODO: handle overlap
+    def initialize_player_list(self, player_list: [PlayerID], current_player_id: PlayerID):
+        all_players = []
+        for player_id in player_list:
+            # Setup turn monitoring view
+            formatted_text = f"{player_id.nickname}"
+            if player_id == current_player_id:
+                formatted_text = formatted_text + " (YOU)"
+            player_avatar = ImageElement(name=player_id.character.file_name, size=(40, 40))
+            player_text = TextElement(text=formatted_text,
+                                      size=18,
+                                      primary_color=Pico.from_character(player_id.character))
+            player_row = HorizontalStack([player_avatar, player_text], padding=0)
+            all_players.append(player_row)
+        self.lobby_stack.elements = all_players  # replace with new list
+        self.lobby_stack.set_top_left((self.SCREEN_SIZE[0] - self.lobby_stack.rectangle.width, 0))
 
+    def set_turn_pointer(self, idx: int):
+        self.turn_pointer.show()
+        align_with = self.lobby_stack.elements[idx].rectangle
+        self.turn_pointer.set_center((align_with.left - (self.turn_pointer.rectangle.width // 2), align_with.centery))
+
+    def update_board_elements(self, board_model: Board):
         overlapping: dict[(int, int), [ImageElement]] = {}
         for player_id, player_token in board_model.player_tokens.items():
             image_element: ImageElement

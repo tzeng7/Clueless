@@ -14,7 +14,13 @@ class Element(Protocol):
                  wrapped: pygame.Surface | pygame_gui.core.UIElement | list[pygame_gui.core.UIElement],
                  rectangle: pygame.Rect):
         self.wrapped = wrapped
+        self._hidden = False
         self._rectangle: pygame.Rect = rectangle
+
+    def hide(self):
+        self._hidden = True
+    def show(self):
+        self._hidden = False
 
     @property
     def rectangle(self):
@@ -32,7 +38,8 @@ class Element(Protocol):
         self.set_top_left(top_left)
 
     def draw_onto(self, screen: pygame.Surface):
-        screen.blit(self.wrapped, self.rectangle)
+        if not self._hidden:
+            screen.blit(self.wrapped, self.rectangle)
 
     # Permanently remove and clean up element from any managers.
     def kill(self):

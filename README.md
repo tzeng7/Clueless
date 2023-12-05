@@ -32,8 +32,8 @@
 # TODO List
 ## Game Client
 ### TitleView
-- Listen to UpdatePlayers when waiting for nickname
-- "YOU" marker in the lobby. This should be reusable since we can use the lobby in the GameView to show whose turn it is.
+- (DONE - Not needed, character assignment only happens after join) Listen to UpdatePlayers when waiting for nickname
+- "YOU" marker in the lobby. Use parentheses next to player nickname (e.g. "Ms. Scarlet: Kevin (YOU)")
 - Checkmark in lobby if player is ready. This may require server changes as well to broadcast ready.
 
 ### GameView
@@ -48,6 +48,7 @@
     - Game indicator for whose turn it is
 
 - Board
+  - lobby and YOU indicator
   - Show which cards are given to the player
   - (optional) add secret passageway indicators
   - (optional) ability to draw weapon tokens

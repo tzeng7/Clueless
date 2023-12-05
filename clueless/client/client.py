@@ -13,6 +13,7 @@ from clueless.messages.messages import AssignPlayerID, UpdatePlayers, StartGame,
 from clueless.model.board import Room
 from clueless.model.board_enums import Direction, Character, Weapon, Location
 from clueless.model.card import Card
+from clueless.model.player import PlayerID
 
 
 class GameClient(TitleView.Delegate):
@@ -32,11 +33,17 @@ class GameClient(TitleView.Delegate):
         self.connection = GameConnection("127.0.0.1", int(10000), self.message_queue)
         self.game_manager: ClientGameManager = None
         self.player: ClientPlayer = None
+        self.player_list: [PlayerID] = []
 
     def update(self):
         self.connection.update()
         self.process_input()
         self.ui_manager.update(self.game_clock.tick(60))
+        self.screen.fill('white')
+        self.view.draw()
+        pygame.display.update()
+
+    def redraw(self):
         self.screen.fill('white')
         self.view.draw()
         pygame.display.update()
@@ -131,8 +138,10 @@ class GameClient(TitleView.Delegate):
     def handle_msg_update_players(self, msg: UpdatePlayers):
         if type(self.view) is not TitleView:
             print("Error: received UpdatePlayers but no longer showing title view")
-        self.view.add_player_id(msg.players, self.player.player_id)
+        self.player_list = [player[0] for player in msg.players]
+        cast(TitleView, self.view).add_player_id(msg.players, self.player.player_id)
         print("Received UpdatePlayers!")
+        self.redraw()
 
     def handle_msg_start_game(self, msg: StartGame):
         if type(self.view) is not TitleView:
@@ -141,16 +150,19 @@ class GameClient(TitleView.Delegate):
         self.game_manager = ClientGameManager(self.player, msg.board)
         game_view = GameView(self.screen, self.ui_manager, self, self.game_manager)
         self.transition(game_view)
+        game_view.initialize_player_list(self.player_list, self.player.player_id)
         game_view.update_board_elements(msg.board)
 
     def handle_msg_start_turn(self, msg: YourTurn):
         print("Received Start Turn!")
         if type(self.view) is not GameView:
             print("Error: received StartTurn but not showing game view")
-
-        self.game_manager.start_turn(msg.turn_id)
         game_view = cast(GameView, self.view)
-        game_view.show_actions()
+        game_view.set_turn_pointer(msg.turn_id % len(self.player_list))
+
+        if self.player.player_id == msg.player_id:
+            self.game_manager.start_turn(msg.turn_id)
+            game_view.show_actions()
 
     def handle_msg_deal_cards(self, msg: DealCards):
         print("TODO: Received DealCards!")
@@ -188,7 +200,7 @@ class GameClient(TitleView.Delegate):
         else:
             text = f"The disproving card is {disprove.card.card_value}"
         game_view.set_dialog(text)
-        self.update()
+        self.redraw()
         pygame.time.delay(2000)
         if disprove.suggest.player_id == self.player.player_id:
             game_view.show_actions()

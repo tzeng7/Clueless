@@ -100,9 +100,9 @@ class AssignPlayerID(BaseMessage):
 class UpdatePlayers(BaseMessage):
     name = "update_players"
 
-    def __init__(self, players: [PlayerID]):
+    def __init__(self, players: [(PlayerID, bool)]):
         super().__init__()
-        self.players: [PlayerID] = players
+        self.players: [(PlayerID, bool)] = players
 
 
 class StartGame(BaseMessage):
@@ -124,9 +124,10 @@ class DealCards(BaseMessage):
 class YourTurn(BaseMessage):
     name = "start_turn"
 
-    def __init__(self, turn_id: int):
+    def __init__(self, turn_id: int, player_id: PlayerID):
         super().__init__()
         self.turn_id: int = turn_id
+        self.player_id: PlayerID = player_id
 
 
 class RequestDisprove(BaseMessage):

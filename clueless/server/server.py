@@ -97,11 +97,12 @@ class ClueServer(Server):
         self.send_players()
 
     def send_players(self):
-        self.SendToAll(UpdatePlayers(players=[player.player_id for player in self.player_queue.values()]))
+        self.SendToAll(UpdatePlayers(players=[(player.player_id, player.ready) for player in self.player_queue.values()]))
 
     def set_ready_for_player(self, channel):
         (self.player_queue[channel]).ready = True
         print("READY")
+        self.send_players()
         if all(player.ready for player in self.player_queue.values()):
             self.start_game()
 

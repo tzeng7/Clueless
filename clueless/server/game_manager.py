@@ -42,7 +42,7 @@ class GameManager:
         self.turn += 1
         self.current_player = self.players[self.turn % len(self.players)]
         if self.current_player.active:
-            self.current_player.Send(YourTurn(turn_id=self.turn))
+            self.SendToAll(YourTurn(turn_id=self.turn, player_id=self.current_player.player_id))
         else:
             self.next_turn()
 
