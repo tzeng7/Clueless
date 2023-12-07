@@ -194,6 +194,33 @@ class GameView(View):
         self.levels: list[list[PayloadButton]] = []
         self.__setup_elements()
 
+
+    def display_player_cards(self, cards):
+
+        # Grouping cards by type
+        cards_by_type = {}
+        for card in cards:
+            if card.card_type not in cards_by_type:
+                cards_by_type[card.card_type] = []
+            cards_by_type[card.card_type].append(card.card_value)
+
+        card_texts = [TextElement(text="CARDS:", size=20)]
+
+        # Creating text elements for each card type and its cards
+        for card_type, card_values in cards_by_type.items():
+            type_text = f"{card_type.name.capitalize()} Cards:"
+            card_texts.append(TextElement(text=type_text, size=18))
+
+            for value in card_values:
+                card_value_text = f" - {value}"
+                card_texts.append(TextElement(text=card_value_text, size=16))
+
+        cards_stack = VerticalStack(card_texts, padding=5)
+        cards_stack.set_top_left((10, 180))
+
+        self.add_element(cards_stack)
+
+
     def __setup_elements(self):
         menu_width = self.screen.get_width() - (self.MENU_PADDING * 2)
         button_width = (menu_width - (self.HORIZONTAL_PADDING * (self.MAX_LEVELS - 1))) // self.MAX_LEVELS
@@ -233,6 +260,7 @@ class GameView(View):
         self.turn_pointer = ImageElement("pointer", (30, 30))
         self.turn_pointer.hide()
         self.add_element(self.turn_pointer)
+
 
 
     ########################
@@ -341,6 +369,9 @@ class GameView(View):
     ### BOARD UPDATES ###
     #####################
 
+
+
+
     def initialize_player_list(self, player_list: [PlayerID], current_player_id: PlayerID):
         all_players = []
         for player_id in player_list:
@@ -405,7 +436,9 @@ class GameView(View):
     ################
 
     def show_disprove(self, disproving_cards: [Card], suggest: Suggest):
-        self.menu_dialog.text = "Please select a card to disprove: "
+        suggestion_text = f"The suggestion was {suggest.suggestion[0].value}, {suggest.suggestion[1].value}, {suggest.suggestion[2].value}."
+        self.menu_dialog.text = suggestion_text
+        self.menu_dialog.text += "Please select a card to disprove: "
 
         if not disproving_cards:
             none_button = PayloadButton.card_button(card=None, button=pygame_gui.elements.UIButton(

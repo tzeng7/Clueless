@@ -153,21 +153,23 @@ class GameClient(TitleView.Delegate):
         game_view.initialize_player_list(self.player_list, self.player.player_id)
         game_view.update_board_elements(msg.board)
 
+    def handle_msg_deal_cards(self, msg: DealCards):
+        print("Received DealCards!")
+        self.player.cards = msg.cards
+
     def handle_msg_start_turn(self, msg: YourTurn):
         print("Received Start Turn!")
         if type(self.view) is not GameView:
             print("Error: received StartTurn but not showing game view")
         game_view = cast(GameView, self.view)
         game_view.set_turn_pointer(msg.turn_id % len(self.player_list))
-
+        if type(self.view) is GameView:
+            cast(GameView, self.view).display_player_cards(self.player.cards)
         if self.player.player_id == msg.player_id:
             self.game_manager.start_turn(msg.turn_id)
             game_view.show_actions()
 
-    def handle_msg_deal_cards(self, msg: DealCards):
-        print("TODO: Received DealCards!")
-        self.player.cards = msg.cards
-        print(self.player.cards)
+
 
     def handle_msg_ClientAction_move(self, msg: Move):
         print("Received Move!")
