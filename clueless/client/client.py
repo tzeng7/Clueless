@@ -201,7 +201,7 @@ class GameClient(TitleView.Delegate):
             text = f"The disproving card is {disprove.card.card_value}"
         game_view.set_dialog(text)
         self.redraw()
-        pygame.time.delay(2000)
+        pygame.time.delay(100000)
         if disprove.suggest.player_id == self.player.player_id:
             game_view.show_actions()
 

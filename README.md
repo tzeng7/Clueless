@@ -39,20 +39,24 @@
 ### GameView
 - Game Observation
   - When game starts, player view should change to observe game events even if it's not their turn
-    - movement
+    - movement 
     - suggestions
     - accusation (correct/incorrect)
-      - incorrect: show dialog and continue observation (add indicator for person who has lost)
+      - incorrect: show dialog and continue observation (add indicator for person who has lost) 
         - the waiting for turn text should instead default to accusing incorrectly
-        - end turn and start next player's turn 
-    - Game indicator for whose turn it is
+        - end turn and start next player's turn  
+    - (DONE) Game indicator for whose turn it is
 
 - Board
-  - lobby and YOU indicator
-  - Show which cards are given to the player
+  - (DONE) lobby and YOU indicator
+  - Show which cards are given to the player 
   - (optional) add secret passageway indicators
   - (optional) ability to draw weapon tokens
 
+- Meeting QA
+  - check on turn order + disprove order
+  - limit number of connections to the server
+  - 
 QA: 
 - Each player's cards are unique
 - ![](QA.png)
