@@ -1,6 +1,6 @@
 from typing import cast
 
-from client_player import ClientPlayer
+from clueless.client.client_player import ClientPlayer
 from clueless.messages.messages import BaseClientAction, Move, Suggest, Disprove, EndTurn, Accuse, EndGame
 from clueless.model.board import Board, Room
 from clueless.model.board_enums import ActionType, Direction, Character, Weapon, Location

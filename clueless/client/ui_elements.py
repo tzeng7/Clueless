@@ -137,7 +137,8 @@ class TextElement(Element):
                  text: str,
                  size: int = 32,
                  primary_color: Color = Color("black")):
-        self.font = pygame.font.Font(filename="../resources/VT323-Regular.ttf", size=size)
+        self.font = pygame.font.SysFont("Arial", size)
+        # self.font = pygame.font.Font(filename="../resources/VT323-Regular.ttf", size=size)
         surface = self.font.render(text, True, primary_color, bgcolor=Color("white"))
         super().__init__(surface, surface.get_rect())
         self._text = text

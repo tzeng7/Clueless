@@ -7,8 +7,8 @@ from clueless.messages.messages import JoinGame, StartGame, UpdatePlayers, Assig
 from clueless.model.board_enums import Character
 from clueless.model.player import PlayerID
 
-from game_manager import GameManager
-from server_player import ServerPlayer
+from clueless.server.game_manager import GameManager
+from clueless.server.server_player import ServerPlayer
 
 
 class ClientChannel(Channel):

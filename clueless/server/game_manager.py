@@ -6,7 +6,7 @@ import random
 
 from clueless.model.card import Card
 from clueless.model.player import PlayerID
-from server_player import ServerPlayer
+from clueless.server.server_player import ServerPlayer
 
 
 # future features:
