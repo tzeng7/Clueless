@@ -475,9 +475,9 @@ class GameView(View):
     ################
 
     def show_disprove(self, disproving_cards: [Card], suggest: Suggest):
-        suggestion_text = f"The suggestion was {suggest.suggestion[0].value}, {suggest.suggestion[1].value}, {suggest.suggestion[2].value}."
+        suggestion_text = f"Please disprove suggestion ({suggest.suggestion[0].value}, {suggest.suggestion[1].value}, {suggest.suggestion[2].value}):"
         self.menu_dialog.text = suggestion_text
-        self.menu_dialog.text += "Please select a card to disprove: "
+        # self.menu_dialog.text +=
 
         if not disproving_cards:
             none_button = PayloadButton.card_button(card=None, button=pygame_gui.elements.UIButton(
