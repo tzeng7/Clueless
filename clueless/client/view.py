@@ -194,9 +194,42 @@ class GameView(View):
         self.levels: list[list[PayloadButton]] = []
         self.__setup_elements()
 
+    # this approach prints cards sorted by type and does not print a card type if
+    # no cards of a particular type exist
+    '''def display_player_cards(self, cards):
+        # Sorting cards by type in the order: Character, Weapon, Location
+        sorted_cards = sorted(cards, key=lambda card: (card.card_type != CardType.CHARACTER,
+                                                       card.card_type != CardType.WEAPON,
+                                                       card.card_type != CardType.LOCATION))
 
+        # Grouping cards by type
+        cards_by_type = {}
+        for card in sorted_cards:
+            if card.card_type not in cards_by_type:
+                cards_by_type[card.card_type] = []
+            cards_by_type[card.card_type].append(card.card_value)
+
+        card_texts = [TextElement(text="CARDS:", size=20)]
+
+        # Creating text elements for each card type and its cards
+        for card_type in [CardType.CHARACTER, CardType.WEAPON, CardType.LOCATION]:
+            if card_type in cards_by_type:
+                type_text = f"{card_type.name.capitalize()} Cards:"
+                card_texts.append(TextElement(text=type_text, size=18))
+
+                for value in cards_by_type[card_type]:
+                    card_value_text = f" - {value}"
+                    card_texts.append(TextElement(text=card_value_text, size=16))
+
+        cards_stack = VerticalStack(card_texts, padding=5)
+        cards_stack.set_top_left((10, 180))
+
+        self.add_element(cards_stack)'''
+
+
+    #this approach prints cards sorted by type and prints No cards if no cards of a
+    # particular type exist
     def display_player_cards(self, cards):
-
         # Grouping cards by type
         cards_by_type = {}
         for card in cards:
@@ -206,14 +239,20 @@ class GameView(View):
 
         card_texts = [TextElement(text="CARDS:", size=20)]
 
+        # List of all card types in order
+        all_card_types = [CardType.CHARACTER, CardType.WEAPON, CardType.LOCATION]
+
         # Creating text elements for each card type and its cards
-        for card_type, card_values in cards_by_type.items():
+        for card_type in all_card_types:
             type_text = f"{card_type.name.capitalize()} Cards:"
             card_texts.append(TextElement(text=type_text, size=18))
 
-            for value in card_values:
-                card_value_text = f" - {value}"
-                card_texts.append(TextElement(text=card_value_text, size=16))
+            if card_type in cards_by_type and cards_by_type[card_type]:
+                for value in cards_by_type[card_type]:
+                    card_value_text = f" - {value}"
+                    card_texts.append(TextElement(text=card_value_text, size=16))
+            else:
+                card_texts.append(TextElement(text=" - No cards", size=16))
 
         cards_stack = VerticalStack(card_texts, padding=5)
         cards_stack.set_top_left((10, 180))
