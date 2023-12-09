@@ -135,20 +135,43 @@ class TextElement(Element):
 
     def __init__(self,
                  text: str,
+                 align: int = pygame.FONT_LEFT,
                  size: int = 32,
                  primary_color: Color = Color("black")):
         self.font = pygame.font.Font(filename="../resources/VT323-Regular.ttf", size=size)
+        self.font.align = align
         surface = self.font.render(text, True, primary_color, bgcolor=Color("white"))
         super().__init__(surface, surface.get_rect())
         self._text = text
         self.size = size
         self.primary_color = primary_color
 
+    @property
+    def strikethrough(self):
+        return self.font.strikethrough
+
+    @strikethrough.setter
+    def strikethrough(self, is_strikethrough):
+        self.font.strikethrough = is_strikethrough
+        self.__rerender()
+
+    @property
+    def color(self):
+        return self.primary_color
+
+    @color.setter
+    def color(self, new_color):
+        self.primary_color = new_color
+        self.__rerender()
+
     def __rerender(self):
         old_rect = self.rectangle
         self.wrapped = self.font.render(self.text, True, self.primary_color)
         self._rectangle = self.wrapped.get_rect()
         self.rectangle.center = old_rect.center
+
+    def to_grayscale(self):
+        self.color = self.primary_color.grayscale()
 
     @property
     def text(self):
@@ -167,6 +190,8 @@ class ImageElement(Element):
         scaled_image = pygame.transform.smoothscale(image, size)
         super().__init__(scaled_image, scaled_image.get_rect())
 
+    def to_grayscale(self):
+        self.wrapped = pygame.transform.grayscale(self.wrapped)
 
 class Rectangle(Element):
     def __init__(self, rect: pygame.Rect, screen: pygame.Surface):

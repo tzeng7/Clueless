@@ -98,7 +98,7 @@ class GameManager:
             print(game_over_message)
         else:
             accuser.active = False
-            self.SendToPlayerWithId(accuser.player_id, accuse_action)
+            self.SendToAll(accuse_action)
 
     def __create_cards(self):
         cards = []

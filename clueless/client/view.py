@@ -190,44 +190,12 @@ class GameView(View):
         super().__init__(screen, ui_manager)
         self.delegate = delegate
         self.game_manager = game_manager
+        self.default_menu_text = self.DIALOG_TEXT_WAITING
         self.current_selection = []
         self.levels: list[list[PayloadButton]] = []
         self.__setup_elements()
 
-    # this approach prints cards sorted by type and does not print a card type if
-    # no cards of a particular type exist
-    '''def display_player_cards(self, cards):
-        # Sorting cards by type in the order: Character, Weapon, Location
-        sorted_cards = sorted(cards, key=lambda card: (card.card_type != CardType.CHARACTER,
-                                                       card.card_type != CardType.WEAPON,
-                                                       card.card_type != CardType.LOCATION))
-
-        # Grouping cards by type
-        cards_by_type = {}
-        for card in sorted_cards:
-            if card.card_type not in cards_by_type:
-                cards_by_type[card.card_type] = []
-            cards_by_type[card.card_type].append(card.card_value)
-
-        card_texts = [TextElement(text="CARDS:", size=20)]
-
-        # Creating text elements for each card type and its cards
-        for card_type in [CardType.CHARACTER, CardType.WEAPON, CardType.LOCATION]:
-            if card_type in cards_by_type:
-                type_text = f"{card_type.name.capitalize()} Cards:"
-                card_texts.append(TextElement(text=type_text, size=18))
-
-                for value in cards_by_type[card_type]:
-                    card_value_text = f" - {value}"
-                    card_texts.append(TextElement(text=card_value_text, size=16))
-
-        cards_stack = VerticalStack(card_texts, padding=5)
-        cards_stack.set_top_left((10, 180))
-
-        self.add_element(cards_stack)'''
-
-
-    #this approach prints cards sorted by type and prints No cards if no cards of a
+    # prints cards sorted by type and prints No cards if no cards of a
     # particular type exist
     def display_player_cards(self, cards):
         # Grouping cards by type
@@ -237,7 +205,7 @@ class GameView(View):
                 cards_by_type[card.card_type] = []
             cards_by_type[card.card_type].append(card.card_value)
 
-        card_texts = [TextElement(text="CARDS:", size=20)]
+        card_texts = [TextElement(text="YOUR CARDS:", size=20)]
 
         # List of all card types in order
         all_card_types = [CardType.CHARACTER, CardType.WEAPON, CardType.LOCATION]
@@ -255,8 +223,9 @@ class GameView(View):
                 card_texts.append(TextElement(text=" - No cards", size=16))
 
         cards_stack = VerticalStack(card_texts, padding=5)
-        cards_stack.set_top_left((10, 180))
-
+        cards_stack.set_top_left(
+            (10, (self.SCREEN_SIZE[0] - self.ACTION_BOX_SIZE[0] - cards_stack.rectangle.height) // 2)
+        )
         self.add_element(cards_stack)
 
 
@@ -275,7 +244,7 @@ class GameView(View):
             self.ACTION_BOX_SIZE[0] - (self.BOX_PADDING * 2)
         )
         action_box = Rectangle(action_box_bounds, self.screen)
-        self.menu_dialog = TextElement(self.DIALOG_TEXT_WAITING)
+        self.menu_dialog = TextElement(self.default_menu_text, align=pygame.FONT_CENTER)
         self.menu_dialog.set_center(
             (self.screen.get_width() // 2, box_y + (self.menu_dialog.rectangle.height // 2) + self.MENU_PADDING)
         )
@@ -288,7 +257,7 @@ class GameView(View):
         self.add_element(action_box)
 
         # Setup Board (top half of the screen)
-        board = ImageElement("GameBoardV1", self.BOARD_SIZE)
+        board = ImageElement("GameBoardV2", self.BOARD_SIZE)
         board.set_top_left(self.BOARD_TOP_LEFT)
         self.board_elements: dict[PlayerID, ImageElement] = {}
         self.add_element(board)
@@ -477,12 +446,11 @@ class GameView(View):
     def show_disprove(self, disproving_cards: [Card], suggest: Suggest):
         suggestion_text = f"Please disprove suggestion ({suggest.suggestion[0].value}, {suggest.suggestion[1].value}, {suggest.suggestion[2].value}):"
         self.menu_dialog.text = suggestion_text
-        # self.menu_dialog.text +=
 
         if not disproving_cards:
             none_button = PayloadButton.card_button(card=None, button=pygame_gui.elements.UIButton(
                 relative_rect=self.button_dimensions,
-                text="None",
+                text="No Cards",
                 manager=self.ui_manager,
                 visible=True),
                                                     on_click=lambda x: self.__disprove_card_clicked(x, suggest))
@@ -518,9 +486,23 @@ class GameView(View):
     def __disprove_card_clicked(self, payload: Card | None, suggest: Suggest):
         self.delegate.did_disprove(payload, suggest)
 
-    def set_dialog_waiting(self):
-        self.menu_dialog.text = self.DIALOG_TEXT_WAITING
+    def restore_default_menu_text(self):
+        self.menu_dialog.text = self.default_menu_text
         self.menu.clear()
+
+    def show_accusation_incorrect(self, accuse: Accuse, is_own_accusation: bool):
+        losing_player_entry = cast(HorizontalStack, self.lobby_stack.elements[accuse.player_id.character.ordinal_value])
+        losing_player_avatar = cast(ImageElement, losing_player_entry.elements[0])
+        losing_player_nickname = cast(TextElement, losing_player_entry.elements[1])
+        losing_player_avatar.to_grayscale()
+        losing_player_nickname.strikethrough = True
+        losing_player_nickname.to_grayscale()
+        if is_own_accusation:
+            self.default_menu_text = "Sorry, your accusation was incorrect. You are eliminated from the game."
+            self.set_dialog(self.default_menu_text)
+        else:
+            self.set_dialog(f"{accuse.player_id.nickname} incorrectly accused {accuse.accusation[0].value} of murder\n" +
+                            f"with the {accuse.accusation[1].value} in the {accuse.accusation[2].value}.")
 
     def set_dialog(self, text: str):
         self.menu_dialog.text = text

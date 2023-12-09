@@ -31,32 +31,26 @@
 
 # TODO List
 ## Game Client
+
 ### TitleView
-- (DONE - Not needed, character assignment only happens after join) Listen to UpdatePlayers when waiting for nickname
-- "YOU" marker in the lobby. Use parentheses next to player nickname (e.g. "Ms. Scarlet: Kevin (YOU)")
-- Checkmark in lobby if player is ready. This may require server changes as well to broadcast ready.
+- 1. (REQUIRED) allow user to configure name of server when joining (default to 127.0.0.1)
 
 ### GameView
-- Game Observation
+- 2. Game Observation
   - When game starts, player view should change to observe game events even if it's not their turn
     - movement 
+      - (OPTIONAL) add a message in action box to describe who moved and in what direction
     - suggestions
-    - accusation (correct/incorrect)
-      - incorrect: show dialog and continue observation (add indicator for person who has lost) 
-        - the waiting for turn text should instead default to accusing incorrectly
-        - end turn and start next player's turn  
-    - (DONE) Game indicator for whose turn it is
-
-- Board
-  - (DONE) lobby and YOU indicator
-  - Show which cards are given to the player 
-  - (optional) add secret passageway indicators
-  - (optional) ability to draw weapon tokens
+      - (REQUIRED) you should see who suggested + the suggestion
+  - IDEA
+    - (OPTIONAL) move observations into a temporary popup, solves movement and suggestion
+## SERVER
+  - 3. (BUG-OPTIONAL) if everyone loses, then game should end and not crash
 
 - Meeting QA
   - check on turn order + disprove order
   - limit number of connections to the server
-  - 
+
 QA: 
 - Each player's cards are unique
 - ![](QA.png)
