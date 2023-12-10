@@ -38,7 +38,7 @@ class Pico:
         char_to_color = {
             Character.SCARLET: cls.RED,
             Character.PLUM: cls.PLUM,
-            Character.MUSTARD: cls.YELLOW,
+            Character.MUSTARD: cls.ORANGE,
             Character.WHITE: cls.BLACK,
             Character.GREEN: cls.DARK_GREEN,
             Character.PEACOCK: cls.PEACOCK

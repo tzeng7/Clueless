@@ -80,14 +80,12 @@ class GameManager:
             next_player = self.players[(index + 1) % len(self.players)]
             if next_player.player_id == disprove.suggest.player_id:
                 print("No players could disprove.")
-                self.SendToPlayerWithId(disprove.suggest.player_id, Disprove(disprove.suggest.player_id,
-                                                                             None,
-                                                                             disprove.suggest))
+                self.SendToAll(Disprove(disprove.suggest.player_id, None, disprove.suggest))
             else:
                 request_disprove = RequestDisprove(disprove.suggest)
                 self.SendToPlayerWithId(next_player.player_id, request_disprove)
         else:
-            self.SendToPlayerWithId(disprove.suggest.player_id, disprove)
+            self.SendToAll(disprove)
 
     def accuse(self, accuser, accuse_action: Accuse):
         character, weapon, location = accuse_action.accusation

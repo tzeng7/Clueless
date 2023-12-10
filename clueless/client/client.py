@@ -186,6 +186,12 @@ class GameClient(TitleView.Delegate):
         game_view.update_board_elements(self.game_manager.board)
         if msg.player_id == self.player.player_id:
             game_view.show_actions()
+        else:
+            game_view.set_dialog(f"{msg.player_id.character.value} moved to the "
+                                 f"{self.game_manager.board.get_character_position_description(msg.player_id)}.")
+            self.redraw()
+            pygame.time.delay(2000)
+            game_view.restore_default_menu_text()
 
     def handle_msg_ClientAction_suggest(self, suggest: Suggest):
         self.game_manager.handle_suggestion(suggest)
@@ -194,6 +200,12 @@ class GameClient(TitleView.Delegate):
         game_view.update_board_elements(self.game_manager.board)
         if self.player.player_id == suggest.player_id:
             self.game_manager.suggest(suggest.suggestion)
+        else:
+            game_view.set_dialog(f"{suggest.player_id.nickname} suggested that {suggest.suggestion[0].value} committed murder\n"
+                                 f"using the {suggest.suggestion[1].value} in the {suggest.suggestion[2].value}.")
+            self.redraw()
+            pygame.time.delay(2000)
+            game_view.restore_default_menu_text()
 
     def handle_msg_request_disprove(self, request_disprove: RequestDisprove):
         print("Received Request Disprove")
@@ -204,16 +216,26 @@ class GameClient(TitleView.Delegate):
 
     def handle_msg_ClientAction_disprove(self, disprove: Disprove):
         game_view = cast(GameView, self.view)
-        if not disprove.card:
-            text = "No card to disprove."
-        else:
-            text = (f"{disprove.player_id.nickname} disproved your suggestion!\n"
-                    + f"The disproving card is {disprove.card.card_value}.")
-        game_view.set_dialog(text)
-        self.redraw()
-        pygame.time.delay(2000)
+
         if disprove.suggest.player_id == self.player.player_id:
+            if not disprove.card:
+                text = "No one was able to disprove your suggestion."
+            else:
+                text = (f"{disprove.player_id.nickname} disproved your suggestion!\n"
+                        + f"The disproving card is {disprove.card.card_value}.")
+            game_view.set_dialog(text)
+            self.redraw()
+            pygame.time.delay(2000)
             game_view.show_actions()
+        elif disprove.player_id != self.player.player_id:
+            if not disprove.card:
+                text = f"No one was able to disprove {disprove.suggest.player_id.nickname}'s suggestion."
+            else:
+                text = f"{disprove.suggest.player_id.nickname}'s suggestion was disproved by {disprove.player_id.nickname}."
+            game_view.set_dialog(text)
+            self.redraw()
+            pygame.time.delay(2000)
+            game_view.restore_default_menu_text()
 
     def handle_msg_ClientAction_accuse(self, accuse: Accuse):
         game_view = cast(GameView, self.view)
@@ -222,6 +244,7 @@ class GameClient(TitleView.Delegate):
             self.connection.Send(self.game_manager.end_turn())
         self.redraw()
         pygame.time.delay(2000)
+        game_view.restore_default_menu_text()
 
     def handle_msg_ClientAction_end_turn(self, end_turn: EndTurn):
         print("Received End Turn!")
