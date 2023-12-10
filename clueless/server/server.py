@@ -68,6 +68,7 @@ class ClueServer(Server):
     channelClass = ClientChannel
 
     def __init__(self):
+        # Server.__init__(self, localaddr=("192.168.50.119", 10000), listeners=6)
         Server.__init__(self, localaddr=("127.0.0.1", 10000), listeners=6)
         self.player_queue: dict[ClientChannel, ServerPlayer] = {}
         self.game_manager: GameManager = None

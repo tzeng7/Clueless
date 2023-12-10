@@ -33,7 +33,6 @@
 ## Game Client
 
 ### TitleView
-- 1. (REQUIRED) allow user to configure name of server when joining (default to 127.0.0.1)
 
 ### GameView
 - 2. Game Observation
@@ -42,8 +41,7 @@
       - (OPTIONAL) add a message in action box to describe who moved and in what direction
     - suggestions
       - (REQUIRED) you should see who suggested + the suggestion
-  - IDEA
-    - (OPTIONAL) move observations into a temporary popup, solves movement and suggestion
+
 ## SERVER
   - 3. (BUG-OPTIONAL) if everyone loses, then game should end and not crash
 

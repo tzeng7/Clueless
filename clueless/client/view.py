@@ -10,7 +10,7 @@ import clueless.client.ui_enums
 from clueless.client.client_game_manager import ClientGameManager
 from clueless.client.ui_elements import Element, Rectangle, TextInputElement, TextElement, ManagedButton, \
     ImageElement, HorizontalStack, VerticalStack, \
-    PayloadButton
+    PayloadButton, ServerSelector
 from clueless.client.ui_enums import Pico
 from clueless.messages.messages import Suggest, Accuse, Disprove
 from clueless.model.board import Board
@@ -80,13 +80,16 @@ class TitleView(View):
     DEFAULT_LOBBY_IMAGE_SIZE = (65, 65)
 
     class Delegate(Protocol):
+        def did_update_server_ip(self, new_ip_address: str):
+            pass
+
         def did_set_nickname(self, nickname: str):
             pass
 
         def did_ready(self):
             pass
 
-    def __init__(self, screen: pygame.Surface, ui_manager: pygame_gui.UIManager, delegate: Delegate):
+    def __init__(self, screen: pygame.Surface, ip_address: str, ui_manager: pygame_gui.UIManager, delegate: Delegate):
         super().__init__(screen, ui_manager)
         self.delegate = delegate
 
@@ -108,7 +111,12 @@ class TitleView(View):
         self.lobby_stack.set_bottom_right(View.SCREEN_SIZE)
         self.add_element(self.lobby_stack)
 
+        self.server_selector = ServerSelector(ip_address=ip_address, ui_manager=ui_manager, on_switch=delegate.did_update_server_ip)
+        self.server_selector.set_top_left((0, self.SCREEN_SIZE[0] - self.server_selector.rectangle.height))
+        self.add_element(self.server_selector)
+
     def transition_to_ready_button(self):
+        self.server_selector.disable()
         self.del_element(self.interactive_element)
 
         ready_button = ManagedButton(

@@ -28,15 +28,17 @@ class GameClient(TitleView.Delegate):
         pygame.display.set_caption("Clueless")
         self.ui_manager = pygame_gui.UIManager((self.screen.get_rect().width, self.screen.get_rect().height))
         self.game_clock = pygame.time.Clock()
-        self.view: View = TitleView(self.screen, self.ui_manager, delegate=self)
+        self.server_ip_address = "127.0.0.1"
+        self.view: View = TitleView(self.screen, self.server_ip_address, self.ui_manager, delegate=self)
         self.message_queue = queue.SimpleQueue()
-        self.connection = GameConnection("127.0.0.1", int(10000), self.message_queue)
+        self.connection: GameConnection | None = None
         self.game_manager: ClientGameManager = None
         self.player: ClientPlayer = None
         self.player_list: [PlayerID] = []
 
     def update(self):
-        self.connection.update()
+        if self.connection:
+            self.connection.update()
         self.process_input()
         self.ui_manager.update(self.game_clock.tick(60))
         self.screen.fill('white')
@@ -72,8 +74,13 @@ class GameClient(TitleView.Delegate):
     ###############################################
     ##########     TitleView.Delegate       #######
     ###############################################
+
+    def did_update_server_ip(self, new_ip_address: str):
+        self.server_ip_address = new_ip_address
+
     def did_set_nickname(self, nickname: str):
         # on_text_finished: text input element
+        self.connection = GameConnection(self.server_ip_address, int(10000), self.message_queue)
         if type(self.view) is not TitleView:
             print("Error: received ready but no longer showing title view")
         self.connection.join_game(nickname=nickname)
